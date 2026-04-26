@@ -7,7 +7,18 @@
 -- =====================================================
 
 -- =====================================================
--- 1. PRODUCTS TABLE
+-- 1. CATEGORIES TABLE
+-- =====================================================
+-- For product categorization (must exist before products FK)
+CREATE TABLE IF NOT EXISTS categories (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================
+-- 2. PRODUCTS TABLE
 -- =====================================================
 -- Stores the base product information (without variants)
 CREATE TABLE IF NOT EXISTS products (
@@ -27,7 +38,7 @@ CREATE INDEX idx_products_category_id ON products(category_id);
 CREATE INDEX idx_products_is_active ON products(is_active);
 
 -- =====================================================
--- 2. PRODUCT_VARIANTS TABLE
+-- 3. PRODUCT_VARIANTS TABLE
 -- =====================================================
 -- Stores product variations (colors × sizes combinations)
 -- Manages individual SKU stock levels
@@ -48,7 +59,7 @@ CREATE INDEX idx_product_variants_sku ON product_variants(sku);
 CREATE INDEX idx_product_variants_color_size ON product_variants(color, size);
 
 -- =====================================================
--- 3. CUSTOMERS TABLE
+-- 4. CUSTOMERS TABLE
 -- =====================================================
 -- CRM data for WhatsApp customers
 -- WhatsApp number is the unique identifier
@@ -67,7 +78,7 @@ CREATE INDEX idx_customers_whatsapp_number ON customers(whatsapp_number);
 CREATE INDEX idx_customers_created_at ON customers(created_at);
 
 -- =====================================================
--- 4. ORDERS TABLE
+-- 5. ORDERS TABLE
 -- =====================================================
 -- Main orders table for tracking customer purchases
 -- Tracks payment status, origin (WhatsApp/Web), and Stripe integration
@@ -92,7 +103,28 @@ CREATE INDEX idx_orders_created_at ON orders(created_at);
 CREATE INDEX idx_orders_stripe_link_id ON orders(stripe_link_id);
 
 -- =====================================================
--- 5. AUDIT_LOGS TABLE
+-- 6. ORDER_ITEMS TABLE
+-- =====================================================
+-- Line items for each order (which products/variants were purchased)
+-- Required to persist the content of every order
+CREATE TABLE IF NOT EXISTS order_items (
+  id SERIAL PRIMARY KEY,
+  order_id INTEGER NOT NULL,
+  variant_id INTEGER,
+  sku VARCHAR(100) NOT NULL,
+  quantity INTEGER NOT NULL CHECK (quantity > 0),
+  unit_price NUMERIC(12, 2),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_order_items_sku ON order_items(sku);
+
+-- =====================================================
+-- 7. AUDIT_LOGS TABLE
 -- =====================================================
 -- Compliance & auditing table
 -- Tracks all admin actions for compliance
@@ -109,16 +141,7 @@ CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 CREATE INDEX idx_audit_logs_details ON audit_logs USING GIN(details);
 
--- =====================================================
--- 6. CATEGORIES TABLE (Optional Reference)
--- =====================================================
--- For product categorization
-CREATE TABLE IF NOT EXISTS categories (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL UNIQUE,
-  description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+
 
 -- =====================================================
 -- SAMPLE DATA (Optional)

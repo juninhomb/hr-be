@@ -21,6 +21,14 @@ class DashboardService {
         (SELECT COUNT(*)::int FROM product_variants WHERE stock_quantity = 0) AS out_of_stock_count,
         (SELECT COUNT(*)::int FROM customers) AS total_customers,
         (SELECT COUNT(*)::int FROM orders WHERE status = 'aguardando_pagamento') AS pending_count,
+        (SELECT COUNT(*)::int FROM orders
+          WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_count,
+        (SELECT COALESCE(SUM(total_amount), 0)::float FROM orders
+          WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_value,
+        (SELECT COUNT(*)::int FROM orders
+          WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_count,
+        (SELECT COALESCE(SUM(total_amount), 0)::float FROM orders
+          WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_value,
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders WHERE status = 'aguardando_pagamento') AS pending_value,
         (SELECT COALESCE(SUM(stock_quantity), 0)::int FROM product_variants) AS total_stock,

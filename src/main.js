@@ -35,7 +35,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // responder preflight em todas as rotas
 
 // ==========================================
 // 2. MIDDLEWARES GLOBAIS

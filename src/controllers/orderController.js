@@ -47,7 +47,7 @@ class OrderController {
       const result = await OrderService.cancelOrder(id);
       res.json(result);
     } catch (error) {
-      if (error.message?.match(/pedido/i)) {
+      if (error.message?.match(/pedido|stock|pendente/i)) {
         return res.status(400).json({ error: error.message });
       }
       next(error);

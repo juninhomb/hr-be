@@ -27,7 +27,9 @@ router.post('/create', OrderController.create);
 
 // Inventário (Produtos)
 router.get('/products', ProductController.list);
+router.get('/products/base', ProductController.listBase);
 router.post('/products', ProductController.create);
+router.post('/products/:productId/variants', ProductController.addVariant);
 router.put('/products/:sku', ProductController.update);
 router.delete('/products/:sku', ProductController.destroy);
 router.post('/products/:sku/add', ProductController.addStock);

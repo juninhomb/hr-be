@@ -32,6 +32,33 @@ class ProductService {
     }
   }
 
+  // Lista de produtos-base (sem variantes) — usada pelo modal
+  // "Adicionar variante a produto existente".
+  async getBaseProducts() {
+    const { rows } = await db.query(`
+      SELECT p.id, p.name, p.base_price,
+             COUNT(v.id)::int AS variant_count
+        FROM products p
+        LEFT JOIN product_variants v ON v.product_id = p.id
+       GROUP BY p.id
+       ORDER BY p.name ASC
+    `);
+    return rows;
+  }
+
+  // Adicionar uma nova variante a um produto já existente.
+  async addVariantToProduct(productId, { sku, color, size, stock_quantity = 0 }) {
+    const productRes = await db.query(`SELECT id, name, base_price FROM products WHERE id = $1`, [productId]);
+    if (!productRes.rows[0]) return null;
+    const { rows } = await db.query(
+      `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [productId, sku, color || null, size || null, stock_quantity || 0]
+    );
+    return { ...rows[0], name: productRes.rows[0].name, price: productRes.rows[0].base_price };
+  }
+
   async updateProduct(sku, data) {
     const { stock_quantity, color, size, name, base_price } = data;
     const client = await db.connect();

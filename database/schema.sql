@@ -68,11 +68,22 @@ CREATE TABLE IF NOT EXISTS customers (
   full_name VARCHAR(255),
   whatsapp_number VARCHAR(20) NOT NULL UNIQUE,
   email VARCHAR(255),
+  address TEXT,
   total_orders INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   
   CHECK (whatsapp_number ~ '^\+?[0-9]{10,15}$')
 );
+
+-- Migration: add address column if it doesn't exist yet (safe to run on existing DBs)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'customers' AND column_name = 'address'
+  ) THEN
+    ALTER TABLE customers ADD COLUMN address TEXT;
+  END IF;
+END $$;
 
 CREATE INDEX idx_customers_whatsapp_number ON customers(whatsapp_number);
 CREATE INDEX idx_customers_created_at ON customers(created_at);

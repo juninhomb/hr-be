@@ -33,19 +33,44 @@ class ProductService {
   }
 
   async updateProduct(sku, data) {
-    // Se fores atualizar o preço base, lembra-te que ele está na tabela 'products'
-    // Mas para este update de variante, mantemos a estrutura atual
-    const { stock_quantity, color, size } = data;
-    const query = `
-      UPDATE product_variants 
-      SET stock_quantity = COALESCE($1, stock_quantity),
-          color = COALESCE($2, color),
-          size = COALESCE($3, size)
-      WHERE sku = $4 
-      RETURNING *;
-    `;
-    const { rows } = await db.query(query, [stock_quantity, color, size, sku]);
-    return rows[0];
+    const { stock_quantity, color, size, name, base_price } = data;
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+
+      const variantRes = await client.query(
+        `UPDATE product_variants
+         SET stock_quantity = COALESCE($1, stock_quantity),
+             color = COALESCE($2, color),
+             size = COALESCE($3, size)
+         WHERE sku = $4
+         RETURNING product_id`,
+        [stock_quantity ?? null, color ?? null, size ?? null, sku]
+      );
+
+      if (!variantRes.rows[0]) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      if (name !== undefined || base_price !== undefined) {
+        await client.query(
+          `UPDATE products
+           SET name = COALESCE($1, name),
+               base_price = COALESCE($2, base_price)
+           WHERE id = $3`,
+          [name ?? null, base_price ?? null, variantRes.rows[0].product_id]
+        );
+      }
+
+      await client.query('COMMIT');
+      return variantRes.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async addStock(sku, quantity) {
@@ -57,6 +82,72 @@ class ProductService {
     `;
     const { rows } = await db.query(query, [quantity, sku]);
     return rows[0];
+  }
+
+  async createProduct(data) {
+    const { name, base_price, sku, color, size, stock_quantity = 0 } = data;
+
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+
+      const productRes = await client.query(
+        `INSERT INTO products (name, base_price) VALUES ($1, $2) RETURNING id`,
+        [name, base_price]
+      );
+      const productId = productRes.rows[0].id;
+
+      const variantRes = await client.query(
+        `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [productId, sku, color, size, stock_quantity]
+      );
+
+      await client.query('COMMIT');
+
+      return { ...variantRes.rows[0], name, price: base_price };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteProduct(sku) {
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+
+      const variantRes = await client.query(
+        `DELETE FROM product_variants WHERE sku = $1 RETURNING product_id`,
+        [sku]
+      );
+
+      if (!variantRes.rows[0]) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+
+      const productId = variantRes.rows[0].product_id;
+      const countRes = await client.query(
+        `SELECT COUNT(*) FROM product_variants WHERE product_id = $1`,
+        [productId]
+      );
+
+      if (parseInt(countRes.rows[0].count) === 0) {
+        await client.query(`DELETE FROM products WHERE id = $1`, [productId]);
+      }
+
+      await client.query('COMMIT');
+      return true;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 }
 

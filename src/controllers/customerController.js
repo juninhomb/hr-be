@@ -22,6 +22,19 @@ class CustomerController {
     try {
       const customer = await CustomerService.upsertCustomer(req.body);
       res.status(201).json(customer);
+    } catch (error) {
+      if (error.code === '23514') {
+        return res.status(400).json({ error: 'Formato de WhatsApp inválido. Use: +351912345678' });
+      }
+      next(error);
+    }
+  }
+  async destroy(req, res, next) {
+    try {
+      const { whatsapp } = req.params;
+      const deleted = await CustomerService.deleteCustomer(whatsapp);
+      if (!deleted) return res.status(404).json({ error: 'Cliente não encontrado' });
+      res.status(204).send();
     } catch (error) { next(error); }
   }
 }

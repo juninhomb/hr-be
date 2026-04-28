@@ -189,6 +189,7 @@ class OrderService {
       if (isOverride) {
         // Items NOVOS (n8n não inseriu) — DEDUZ stock destes
         await client.query(`DELETE FROM order_items WHERE order_id = $1`, [orderId]);
+        let recomputedTotal = 0;
         for (const it of overrideItems) {
           const qty = parseInt(it.quantity, 10);
           if (!qty || qty <= 0) throw new Error(`Quantidade inválida para SKU ${it.sku}`);
@@ -205,8 +206,16 @@ class OrderService {
              VALUES ($1, $2, $3, $4, $5)`,
             [orderId, upd.rows[0].id, it.sku, qty, it.unit_price ?? null]
           );
+          recomputedTotal += Number(it.unit_price || 0) * qty;
         }
-        console.log(`[orderService] confirmPayment#${orderId} → override: ${overrideItems.length} items NOVOS, stock deduzido agora`);
+        // ⚠ FIX: o total_amount original veio do n8n (pedido sem itens / preço
+        // declarado pelo bot). Como agora os items reais foram registados,
+        // o total tem de ser recalculado para reflectir os preços efectivos.
+        await client.query(
+          `UPDATE orders SET total_amount = $1 WHERE id = $2`,
+          [recomputedTotal, orderId]
+        );
+        console.log(`[orderService] confirmPayment#${orderId} → override: ${overrideItems.length} items NOVOS, stock deduzido, total_amount recalculado = ${recomputedTotal.toFixed(2)}`);
       } else {
         // Caso normal — apenas garante que tem items
         const { rows: items } = await client.query(

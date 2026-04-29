@@ -87,6 +87,7 @@ class OrderService {
       payment_method = 'dinheiro',
       status = 'pago',
       origin = 'loja_fisica',
+      is_delivery = false,
     } = data;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -96,7 +97,11 @@ class OrderService {
       throw new Error('Status inicial inválido (use pago ou aguardando_pagamento).');
     }
 
-    console.log(`[orderService] createManualOrder → status=${status} | items=${items.length} | customer_id=${customer_id ?? '∅'} | stock SEMPRE deduzido`);
+
+    // Define shipping_fee conforme regra
+    const shipping_fee = is_delivery ? 5 : 0;
+
+    console.log(`[orderService] createManualOrder → status=${status} | items=${items.length} | customer_id=${customer_id ?? '∅'} | stock SEMPRE deduzido | is_delivery=${is_delivery} | shipping_fee=${shipping_fee}`);
 
     const client = await db.connect();
     try {
@@ -111,9 +116,9 @@ class OrderService {
       }
 
       const orderRes = await client.query(
-        `INSERT INTO orders (customer_id, total_amount, status, origin, payment_method)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [customer_id, computedTotal, status, origin, payment_method]
+        `INSERT INTO orders (customer_id, total_amount, status, origin, payment_method, is_delivery, shipping_fee)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [customer_id, computedTotal, status, origin, payment_method, is_delivery, shipping_fee]
       );
       const orderId = orderRes.rows[0].id;
 
@@ -154,7 +159,7 @@ class OrderService {
         orderId, customer_id, total: computedTotal, origin, status,
         items: items.length, stock_deducted: true,
       });
-      return { success: true, orderId, total_amount: computedTotal, status };
+      return { success: true, orderId, total_amount: computedTotal, status, is_delivery, shipping_fee };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

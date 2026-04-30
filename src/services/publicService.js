@@ -228,12 +228,33 @@ class PublicService {
       ? String(customer.address).trim()
       : [street, postalCode, city].filter(Boolean).join(', ') || null;
 
+    if (!(customer.full_name || '').trim() || customer.full_name.trim().length < 3) {
+      throw publicError(400, 'Nome completo é obrigatório.');
+    }
+    const emailTrimmed = customer.email?.trim();
+    if (!emailTrimmed || !isValidPublicEmail(emailTrimmed)) {
+      throw publicError(400, 'Indica um e-mail válido.');
+    }
+
     if (isDelivery) {
       if (!street && !customer.address) {
         throw publicError(400, 'Para entrega, a morada é obrigatória.');
       }
       if (!postalCode) {
         throw publicError(400, 'Código postal é obrigatório para entrega.');
+      }
+      if (!city?.trim()) {
+        throw publicError(400, 'Localidade é obrigatória.');
+      }
+    } else {
+      if (!street && !customer.address) {
+        throw publicError(400, 'Indica a tua morada (rua e número).');
+      }
+      if (!postalCode) {
+        throw publicError(400, 'Código postal é obrigatório.');
+      }
+      if (!city?.trim()) {
+        throw publicError(400, 'Localidade é obrigatória.');
       }
     }
 
@@ -289,7 +310,7 @@ class PublicService {
         [
           customer.full_name?.trim() || null,
           cleanWhatsapp,
-          customer.email?.trim() || null,
+          emailTrimmed,
           composedAddress,
           postalCode,
           city,
@@ -300,24 +321,23 @@ class PublicService {
       );
       const customerId = customerRes.rows[0].id;
 
-      const deliverySnapshot = isDelivery && composedAddress ? composedAddress : null;
+      /** Snapshot no pedido também em levantamento (morada de contacto / referência). */
+      const deliverySnapshot = composedAddress || null;
 
-      // Morada estruturada na agenda — várias por cliente (dedupe por fingerprint)
-      if (isDelivery) {
-        const streetNameBk = String(customer.street_name || '').trim().slice(0, 512);
-        if (streetNameBk.length >= 2 && postalCode) {
-          await upsertCustomerAddress(client, customerId, {
-            street_name: streetNameBk,
-            street_number: String(customer.street_number ?? '').trim().slice(0, 48),
-            apartment: customer.apartment?.trim() || null,
-            address_obs: customer.address_obs?.trim() || null,
-            postal_code: postalCode,
-            city,
-            district,
-            country,
-            label: customer.address_label?.trim()?.slice(0, 80) || null,
-          });
-        }
+      // Morada estruturada na agenda — várias por cliente (entrega ou levantamento)
+      const streetNameBk = String(customer.street_name || '').trim().slice(0, 512);
+      if (streetNameBk.length >= 2 && postalCode) {
+        await upsertCustomerAddress(client, customerId, {
+          street_name: streetNameBk,
+          street_number: String(customer.street_number ?? '').trim().slice(0, 48),
+          apartment: customer.apartment?.trim() || null,
+          address_obs: customer.address_obs?.trim() || null,
+          postal_code: postalCode,
+          city,
+          district,
+          country,
+          label: customer.address_label?.trim()?.slice(0, 80) || null,
+        });
       }
 
       // 2) Re-puxa preços e stock dos SKUs pedidos (uma única query)
@@ -540,6 +560,13 @@ function publicError(status, message) {
   const err = new Error(message);
   err.status = status;
   return err;
+}
+
+function isValidPublicEmail(s) {
+  if (!s || typeof s !== 'string') return false;
+  const t = s.trim();
+  if (t.length < 5 || t.length > 254) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
 }
 
 /** valida success/cancel URL para Stripe Checkout (anti open-redirect). */

@@ -173,6 +173,8 @@ function safeDeleteCategoryImage(publicUrl) {
   try {
     if (!publicUrl || typeof publicUrl !== 'string') return;
     if (/^https?:\/\//i.test(publicUrl)) return; // URL externa — não é nossa.
+    // Nunca apagar o placeholder partilhado (mesma defesa que productService).
+    if (publicUrl.endsWith('/placeholder.svg') || publicUrl.endsWith('/placeholder.png')) return;
     const filename = path.basename(publicUrl);
     const fullPath = path.join(CATEGORIES_DIR, filename);
     if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);

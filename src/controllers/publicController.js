@@ -47,6 +47,32 @@ class PublicController {
     }
   }
 
+  /** Checkout Stripe: cria pedido + sessão Stripe Checkout (redirect). */
+  async createStripeCheckout(req, res, next) {
+    try {
+      const {
+        customer = {},
+        items = [],
+        delivery = {},
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      } = req.body || {};
+      const data = await PublicService.createWebsiteOrderStripeCheckout({
+        customer,
+        items,
+        delivery,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+      res.status(201).json(data);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
   /** Conferência de cliente + moradas sugeridas (só identificação pelo número no checkout). */
   async customerHints(req, res, next) {
     try {

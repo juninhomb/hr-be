@@ -23,5 +23,6 @@ router.get('/postal-code/:cp', ShippingController.lookupCp);
 // Checkout
 router.post('/customer-hints', PublicController.customerHints);
 router.post('/orders', PublicController.createOrder);
+router.post('/orders/stripe-checkout', PublicController.createStripeCheckout);
 
 module.exports = router;

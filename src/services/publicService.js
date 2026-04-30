@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const ShippingService = require('./shippingService');
+const stripeCheckoutService = require('./stripeCheckoutService');
 const { assertValidWhatsappOrThrow, canonicalWhatsappNumber } = require('../utils/whatsappNormalize');
 const { upsertCustomerAddress } = require('./customerAddressService');
 
@@ -423,6 +424,52 @@ class PublicService {
       client.release();
     }
   }
+
+  /**
+   * Checkout Stripe: grava pedido (como no fluxo WhatsApp) e abre sessão Stripe.
+   * Falha na sessão → reverte stock e apaga o pedido.
+   */
+  async createWebsiteOrderStripeCheckout({ customer, items, delivery, success_url, cancel_url }) {
+    stripeCheckoutService.getStripeOrThrow();
+    assertStripeCheckoutRedirects(success_url, cancel_url);
+
+    const orderPayload = await this.createWebsiteOrder({
+      customer: { ...(customer || {}), payment_method: 'stripe' },
+      items,
+      delivery,
+    });
+
+    try {
+      const session = await stripeCheckoutService.createSessionForOrder({
+        orderId: orderPayload.order_id,
+        customerEmail: customer?.email,
+        successUrl: success_url,
+        cancelUrl: cancel_url,
+      });
+      if (!session.url) {
+        throw new Error('Stripe não devolveu URL de checkout.');
+      }
+      return {
+        checkout_url: session.url,
+        stripe_session_id: session.id,
+        order_id: orderPayload.order_id,
+        customer_id: orderPayload.customer_id,
+        items_total: orderPayload.items_total,
+        shipping_fee: orderPayload.shipping_fee,
+        shipping_zone: orderPayload.shipping_zone,
+        total_amount: orderPayload.total_amount,
+        status: orderPayload.status,
+      };
+    } catch (err) {
+      await stripeCheckoutService.cleanupFailedCheckoutOrder(orderPayload.order_id);
+      if (err.status) throw err;
+      const wrap = new Error(
+        err?.message || 'Não foi possível iniciar o pagamento Stripe. Tenta novamente.',
+      );
+      wrap.status = 502;
+      throw wrap;
+    }
+  }
 }
 
 // -------------------------------------------------------------
@@ -493,6 +540,47 @@ function publicError(status, message) {
   const err = new Error(message);
   err.status = status;
   return err;
+}
+
+/** valida success/cancel URL para Stripe Checkout (anti open-redirect). */
+function assertStripeCheckoutRedirects(successUrl, cancelUrl) {
+  if (!successUrl || !cancelUrl) {
+    throw publicError(400, 'success_url e cancel_url são obrigatórios.');
+  }
+  if (!String(successUrl).includes('{CHECKOUT_SESSION_ID}')) {
+    throw publicError(
+      400,
+      'success_url deve incluir o placeholder {CHECKOUT_SESSION_ID} (exigência Stripe).',
+    );
+  }
+
+  const raw = process.env.STRIPE_CHECKOUT_ALLOWED_ORIGINS?.trim();
+  const allowed = raw
+    ? raw.split(',').map((s) => s.trim()).filter(Boolean)
+    : ['http://localhost:3002', 'http://127.0.0.1:3002'];
+
+  if (process.env.STRIPE_SECRET_KEY?.trim() && !raw) {
+    throw publicError(
+      500,
+      'STRIPE_CHECKOUT_ALLOWED_ORIGINS é obrigatório quando Stripe está configurado (lista de origens do site público).',
+    );
+  }
+
+  for (const [name, rawVal] of [['success_url', successUrl], ['cancel_url', cancelUrl]]) {
+    const u = String(rawVal);
+    const safe = u.includes('{CHECKOUT_SESSION_ID}')
+      ? u.split('{CHECKOUT_SESSION_ID}').join('cs_placeholder_123')
+      : u;
+    let origin;
+    try {
+      origin = new URL(safe).origin;
+    } catch {
+      throw publicError(400, `${name} inválido.`);
+    }
+    if (!allowed.includes(origin)) {
+      throw publicError(400, `${name}: origem não autorizada (${origin}).`);
+    }
+  }
 }
 
 module.exports = new PublicService();

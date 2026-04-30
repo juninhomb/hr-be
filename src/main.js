@@ -4,6 +4,7 @@ const path = require('path');
 const orderRoutes = require('./routes/orderRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const errorHandler = require('./config/errorHandler');
+const stripeWebhookController = require('./controllers/stripeWebhookController');
 require('dotenv').config();
 
 const app = express();
@@ -52,7 +53,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ==========================================
-// 2. MIDDLEWARES GLOBAIS
+// 2. WEBHOOK STRIPE (corpo bruto — antes de json())
+// ==========================================
+app.post(
+  '/api/public/stripe-webhook',
+  express.raw({ type: 'application/json' }),
+  (req, res, next) => {
+    stripeWebhookController.handle(req, res).catch(next);
+  },
+);
+
+// ==========================================
+// 3. MIDDLEWARES GLOBAIS
 // ==========================================
 app.use(express.json());
 
@@ -69,7 +81,7 @@ app.use(
 );
 
 // ==========================================
-// 3. DEFINIÇÃO DE ROTAS
+// 4. DEFINIÇÃO DE ROTAS
 // ==========================================
 
 // Rotas PÚBLICAS do site de vendas (hrstore-site) — sem JWT.
@@ -94,7 +106,7 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 // ==========================================
-// 3. INICIALIZAÇÃO DO SERVIDOR
+// 5. INICIALIZAÇÃO DO SERVIDOR
 // ==========================================
 const PORT = process.env.PORT || 3001;
 

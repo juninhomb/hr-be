@@ -1,6 +1,15 @@
 const db = require('../config/db');
 const LogService = require('./logService');
 
+/** Frete por defeito (€) em criação manual com entrega. `.env`: DEFAULT_SHIPPING_FEE_EUR */
+function defaultShippingFeeEur() {
+  const raw = process.env.DEFAULT_SHIPPING_FEE_EUR;
+  if (raw == null || String(raw).trim() === '') return 5;
+  const n = Number(String(raw).trim().replace(',', '.'));
+  if (!Number.isFinite(n) || n < 0) return 5;
+  return n;
+}
+
 class OrderService {
   // -------------------------------------------------------------
   // Helper: anexa items[] aos pedidos já consultados
@@ -31,6 +40,7 @@ class OrderService {
   async getPendingOrders() {
     const { rows } = await db.query(`
       SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
+             o.is_delivery, o.shipping_fee,
              c.full_name, c.whatsapp_number, c.email, c.address
         FROM orders o
         LEFT JOIN customers c ON o.customer_id = c.id
@@ -46,6 +56,7 @@ class OrderService {
   async getOrderHistory() {
     const { rows } = await db.query(`
       SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
+             o.is_delivery, o.shipping_fee,
              c.full_name, c.whatsapp_number, c.email, c.address
         FROM orders o
         LEFT JOIN customers c ON o.customer_id = c.id
@@ -88,6 +99,7 @@ class OrderService {
       status = 'pago',
       origin = 'loja_fisica',
       is_delivery = false,
+      shipping_fee = defaultShippingFeeEur(),
     } = data;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -99,9 +111,13 @@ class OrderService {
 
 
     // Define shipping_fee conforme regra
-    const shipping_fee = is_delivery ? 5 : 0;
+    const rawShippingFee = String(shipping_fee).replace(',', '.');
+    const parsedShippingFee = Number(rawShippingFee);
+    const finalShippingFee = is_delivery
+      ? (Number.isFinite(parsedShippingFee) ? parsedShippingFee : defaultShippingFeeEur())
+      : 0;
 
-    console.log(`[orderService] createManualOrder → status=${status} | items=${items.length} | customer_id=${customer_id ?? '∅'} | stock SEMPRE deduzido | is_delivery=${is_delivery} | shipping_fee=${shipping_fee}`);
+    console.log(`[orderService] createManualOrder → status=${status} | items=${items.length} | customer_id=${customer_id ?? '∅'} | stock SEMPRE deduzido | is_delivery=${is_delivery} | shipping_fee=${finalShippingFee}`);
 
     const client = await db.connect();
     try {
@@ -118,7 +134,7 @@ class OrderService {
       const orderRes = await client.query(
         `INSERT INTO orders (customer_id, total_amount, status, origin, payment_method, is_delivery, shipping_fee)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [customer_id, computedTotal, status, origin, payment_method, is_delivery, shipping_fee]
+        [customer_id, computedTotal, status, origin, payment_method, is_delivery, finalShippingFee]
       );
       const orderId = orderRes.rows[0].id;
 
@@ -159,7 +175,7 @@ class OrderService {
         orderId, customer_id, total: computedTotal, origin, status,
         items: items.length, stock_deducted: true,
       });
-      return { success: true, orderId, total_amount: computedTotal, status, is_delivery, shipping_fee };
+      return { success: true, orderId, total_amount: computedTotal, status, is_delivery, shipping_fee: finalShippingFee };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -175,19 +191,30 @@ class OrderService {
   //   - Excepção: se vier overrideItems (n8n não gravou items), esses
   //     items são novos e PRECISAM de deduzir stock agora.
   // -------------------------------------------------------------
-  async confirmPayment(orderId, overrideItems = null) {
+  async confirmPayment(orderId, overrideItems = null, shippingFee = null) {
     const client = await db.connect();
     try {
       await client.query('BEGIN');
 
       const orderRes = await client.query(
-        `SELECT id, customer_id, status FROM orders WHERE id = $1 FOR UPDATE`,
+        `SELECT id, customer_id, status, is_delivery, shipping_fee FROM orders WHERE id = $1 FOR UPDATE`,
         [orderId]
       );
       if (!orderRes.rows[0]) throw new Error('Pedido não encontrado.');
       const order = orderRes.rows[0];
       if (order.status === 'pago') throw new Error('Pedido já está pago.');
       if (order.status === 'cancelado') throw new Error('Pedido cancelado não pode ser confirmado.');
+
+      const finalShippingFee = order.is_delivery
+        ? (() => {
+            if (shippingFee !== null && shippingFee !== undefined) {
+              const raw = String(shippingFee).replace(',', '.');
+              const parsed = Number(raw);
+              return Number.isFinite(parsed) ? parsed : Number(order.shipping_fee || 0);
+            }
+            return Number(order.shipping_fee || 0);
+          })()
+        : 0;
 
       const isOverride = Array.isArray(overrideItems) && overrideItems.length > 0;
 
@@ -213,24 +240,31 @@ class OrderService {
           );
           recomputedTotal += Number(it.unit_price || 0) * qty;
         }
-        // ⚠ FIX: o total_amount original veio do n8n (pedido sem itens / preço
-        // declarado pelo bot). Como agora os items reais foram registados,
-        // o total tem de ser recalculado para reflectir os preços efectivos.
+        const finalTotal = recomputedTotal + finalShippingFee;
         await client.query(
-          `UPDATE orders SET total_amount = $1 WHERE id = $2`,
-          [recomputedTotal, orderId]
+          `UPDATE orders SET total_amount = $1, shipping_fee = $2 WHERE id = $3`,
+          [finalTotal, finalShippingFee, orderId]
         );
-        console.log(`[orderService] confirmPayment#${orderId} → override: ${overrideItems.length} items NOVOS, stock deduzido, total_amount recalculado = ${recomputedTotal.toFixed(2)}`);
+        console.log(`[orderService] confirmPayment#${orderId} → override: ${overrideItems.length} items NOVOS, stock deduzido, total_amount recalculado = ${finalTotal.toFixed(2)}, shipping_fee = ${finalShippingFee.toFixed(2)}`);
       } else {
-        // Caso normal — apenas garante que tem items
         const { rows: items } = await client.query(
-          `SELECT sku, quantity FROM order_items WHERE order_id = $1`,
+          `SELECT quantity, unit_price FROM order_items WHERE order_id = $1`,
           [orderId]
         );
         if (items.length === 0) {
           throw new Error('Pedido sem itens. Use "Adicionar Itens" antes de confirmar.');
         }
-        console.log(`[orderService] confirmPayment#${orderId} → status → pago (stock JÁ tinha sido deduzido na criação)`);
+
+        const itemsTotal = items.reduce(
+          (acc, it) => acc + Number(it.unit_price || 0) * Number(it.quantity || 0),
+          0
+        );
+        const finalTotal = itemsTotal + finalShippingFee;
+        await client.query(
+          `UPDATE orders SET total_amount = $1, shipping_fee = $2 WHERE id = $3`,
+          [finalTotal, finalShippingFee, orderId]
+        );
+        console.log(`[orderService] confirmPayment#${orderId} → status → pago (stock JÁ tinha sido deduzido na criação) | total_amount = ${finalTotal.toFixed(2)}, shipping_fee = ${finalShippingFee.toFixed(2)}`);
       }
 
       await client.query(`UPDATE orders SET status = 'pago' WHERE id = $1`, [orderId]);
@@ -243,8 +277,65 @@ class OrderService {
       }
 
       await client.query('COMMIT');
-      await LogService.register('system', 'payment_confirmed', { orderId, override: isOverride });
+      await LogService.register('system', 'payment_confirmed', { orderId, override: isOverride, shipping_fee: finalShippingFee });
       return { success: true, orderId };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Guardar frete em pedido pendente (sem confirmar pagamento)
+  // -------------------------------------------------------------
+  async updatePendingShippingFee(orderId, shippingFee) {
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+
+      const orderRes = await client.query(
+        `SELECT id, status, origin, is_delivery FROM orders WHERE id = $1 FOR UPDATE`,
+        [orderId]
+      );
+      if (!orderRes.rows[0]) throw new Error('Pedido não encontrado.');
+      const order = orderRes.rows[0];
+      if (order.status !== 'aguardando_pagamento') {
+        throw new Error('Só pedidos pendentes permitem alterar o frete.');
+      }
+
+      const raw = String(shippingFee).replace(',', '.');
+      const fee = Number(raw);
+      if (!Number.isFinite(fee) || fee < 0) throw new Error('Valor de frete inválido.');
+
+      const { rows: items } = await client.query(
+        `SELECT quantity, unit_price FROM order_items WHERE order_id = $1`,
+        [orderId]
+      );
+      if (items.length === 0) throw new Error('Pedido sem itens.');
+
+      const itemsTotal = items.reduce(
+        (acc, it) => acc + Number(it.unit_price || 0) * Number(it.quantity || 0),
+        0
+      );
+      const finalTotal = itemsTotal + fee;
+
+      // Pedidos WhatsApp podem chegar sem is_delivery — ao gravar frete, marca como entrega.
+      const shouldFlagDelivery = !order.is_delivery && fee > 0;
+
+      await client.query(
+        shouldFlagDelivery
+          ? `UPDATE orders SET total_amount = $1, shipping_fee = $2, is_delivery = TRUE WHERE id = $3`
+          : `UPDATE orders SET total_amount = $1, shipping_fee = $2 WHERE id = $3`,
+        [finalTotal, fee, orderId]
+      );
+
+      await client.query('COMMIT');
+      await LogService.register('system', 'shipping_fee_updated', {
+        orderId, shipping_fee: fee, total_amount: finalTotal, flagged_delivery: shouldFlagDelivery,
+      });
+      return { success: true, orderId, shipping_fee: fee, total_amount: finalTotal };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

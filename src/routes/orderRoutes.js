@@ -45,6 +45,7 @@ router.delete('/customers/:whatsapp', CustomerController.destroy);
 router.get('/:id', OrderController.show);
 router.post('/:id/cancel', OrderController.cancel);
 router.post('/:id/ship', OrderController.ship);
+router.patch('/:id/shipping-fee', OrderController.updateShippingFee);
 router.delete('/:id', OrderController.destroy);
 
 module.exports = router;

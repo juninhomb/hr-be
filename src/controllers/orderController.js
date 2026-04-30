@@ -27,9 +27,9 @@ class OrderController {
 
   async confirm(req, res, next) {
     try {
-      const { orderId, items } = req.body;
+      const { orderId, items, shipping_fee } = req.body;
       if (!orderId) return res.status(400).json({ error: 'orderId é obrigatório' });
-      const result = await OrderService.confirmPayment(orderId, items || null);
+      const result = await OrderService.confirmPayment(orderId, items || null, shipping_fee);
       res.json(result);
     } catch (error) {
       // Erros de stock / regra de negócio retornam 400, não 500
@@ -63,6 +63,24 @@ class OrderController {
       res.json(result);
     } catch (error) {
       if (error.message?.match(/pedido|pago/i)) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  async updateShippingFee(req, res, next) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+      const { shipping_fee } = req.body || {};
+      if (shipping_fee === undefined || shipping_fee === null) {
+        return res.status(400).json({ error: 'shipping_fee é obrigatório' });
+      }
+      const result = await OrderService.updatePendingShippingFee(id, shipping_fee);
+      res.json(result);
+    } catch (error) {
+      if (error.message?.match(/pedido|frete|entrega|item/i)) {
         return res.status(400).json({ error: error.message });
       }
       next(error);

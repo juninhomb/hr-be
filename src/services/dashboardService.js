@@ -25,10 +25,6 @@ class DashboardService {
           WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_count,
         (SELECT COALESCE(SUM(total_amount), 0)::float FROM orders
           WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_value,
-        (SELECT COUNT(*)::int FROM orders
-          WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_count,
-        (SELECT COALESCE(SUM(total_amount), 0)::float FROM orders
-          WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_value,
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders WHERE status = 'aguardando_pagamento') AS pending_value,
         (SELECT COALESCE(SUM(stock_quantity), 0)::int FROM product_variants) AS total_stock,
@@ -97,6 +93,7 @@ class DashboardService {
     // Pedidos pendentes recentes (top 5)
     const recentPending = `
       SELECT o.id, o.total_amount, o.origin, o.created_at,
+             COALESCE(o.is_delivery, false) AS is_delivery,
              c.full_name, c.whatsapp_number
         FROM orders o
         LEFT JOIN customers c ON c.id = o.customer_id

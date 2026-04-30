@@ -77,10 +77,12 @@ router.post('/shipping-zones', ShippingController.createAdmin);
 router.put('/shipping-zones/:id', ShippingController.updateAdmin);
 router.delete('/shipping-zones/:id', ShippingController.destroyAdmin);
 
-// CRM (Clientes)
+// Clientes (backoffice) — rotas mais específicas primeiro
 router.get('/customers', CustomerController.list);
-router.get('/customers/:whatsapp', CustomerController.show);
 router.post('/customers', CustomerController.store);
+router.delete('/customers/:whatsapp/addresses/:addressId', CustomerController.destroySavedAddress);
+router.post('/customers/:whatsapp/addresses', CustomerController.storeSavedAddress);
+router.get('/customers/:whatsapp', CustomerController.show);
 router.delete('/customers/:whatsapp', CustomerController.destroy);
 
 // Detalhe / cancelamento de pedidos por ID — declarados POR ÚLTIMO

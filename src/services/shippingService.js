@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const PtLocal = require('../postal/ptLocalLookup');
 
 /**
  * Lookup + cálculo de tarifas de envio.
@@ -7,8 +8,12 @@ const db = require('../config/db');
  *  - CRUD da tabela `shipping_zones` (admin).
  *  - Resolver a zona aplicável dado um {country, postal_code}.
  *  - Calcular o valor final do frete (com `free_above_eur`).
- *  - Lookup de código postal Português via json.geoapi.pt
- *    (open-source, sem chave) com cache em memória.
+ *  - Lookup de código postal Portugal:
+ *       1) ficheiro local `data/pt-postal-lookup.json` gerado pelo script oficial
+ *          (Central de Dados → dados derivados dos CTT, sem quotas HTTP nem subscrições);
+ *       2) opcionalmente json.geoapi.pt se GEOAPI_PT_API_KEY estiver definida;
+ *       3) resposta degradada manual se não houver ficheiro nem chave GeoAPI.
+ *    Cache em RAM para todas as variantes acima.
  *
  * Toda a chamada feita pelo storefront ao calcular frete passa por aqui;
  * o publicService NUNCA usa valores enviados pelo cliente.
@@ -153,7 +158,7 @@ class ShippingService {
   }
 
   // -------------------------------------------------------------
-  // Lookup de código postal (json.geoapi.pt) com cache TTL
+  // Lookup código postal Portugal (dataset local OU GeoAPI opcional)
   // -------------------------------------------------------------
 
   async lookupPortugalPostalCode(rawCp) {
@@ -165,36 +170,118 @@ class ShippingService {
     }
 
     const cached = cpCache.get(cp);
-    if (cached && cached.expiresAt > Date.now()) return cached.value;
+    if (cached && Date.now() < cached.freshUntil) {
+      return { ...cached.value, lookup_stale: false, lookup_degraded: false };
+    }
 
-    let payload;
+    const inflightKey = cp;
+    if (cpInflight.has(inflightKey)) {
+      return cpInflight.get(inflightKey);
+    }
+
+    const promise = this._resolvePostalLookup(cp, cached?.value || null);
+    cpInflight.set(inflightKey, promise);
     try {
-      const res = await fetch(`https://json.geoapi.pt/cp/${cp}`, {
-        // Timeout simples: AbortController em 5s
-        signal: AbortSignal.timeout(5000),
-        headers: { 'Accept': 'application/json' },
+      return await promise;
+    } finally {
+      cpInflight.delete(inflightKey);
+    }
+  }
+
+  /**
+   * 1º índice local (Open Data Portugal). Opcional geoapi com chave. Degradado se nada existe.
+   */
+  async _resolvePostalLookup(cp, staleFallback) {
+    const loc = PtLocal.lookupPtPostalRecord(cp);
+    const hasLocal = PtLocal.isLocalIndexInstalled();
+
+    if (loc) {
+      const normalized = PtLocal.toPublicPostalPayload(cp, loc);
+      cpCache.set(cp, {
+        value: stripLookupFlags(normalized),
+        freshUntil: Date.now() + CP_CACHE_FRESH_MS_OK,
       });
+      if (cpCache.size > CP_CACHE_MAX) trimCache();
+      return { ...normalized, lookup_stale: false, lookup_degraded: false };
+    }
+
+    if (hasLocal && loc === null) {
+      const err = new Error('Código postal não encontrado.');
+      err.status = 404;
+      throw err;
+    }
+
+    const useGeoApi = Boolean((process.env.GEOAPI_PT_API_KEY || '').trim());
+    if (useGeoApi) {
+      return this._lookupPostalViaGeoApi(cp, staleFallback);
+    }
+
+    const fallback = buildDegradedCpResponse(cp);
+    cpCache.set(cp, {
+      value: stripLookupFlags(fallback),
+      freshUntil: Date.now() + CP_CACHE_FRESH_MS_FAIL,
+    });
+    if (cpCache.size > CP_CACHE_MAX) trimCache();
+    return { ...fallback, lookup_stale: false, lookup_degraded: true };
+  }
+
+  /**
+   * Pedido HTTP + normalização. Usa cache stale e resposta "degradada" quando
+   * json.geoapi.pt limita pedidos (429) — apenas se GEOAPI_PT_API_KEY estiver definido.
+   */
+  async _lookupPostalViaGeoApi(cp, staleFallback) {
+    let payload;
+    let res;
+    try {
+      res = await fetchGeoCpJson(cp);
+      if (res.status === 429) {
+        await sleep(2200);
+        res = await fetchGeoCpJson(cp);
+      }
       if (res.status === 404) {
         const err = new Error('Código postal não encontrado.');
         err.status = 404;
         throw err;
       }
       if (!res.ok) {
-        const err = new Error(`GeoAPI devolveu ${res.status}`);
-        err.status = 502;
-        throw err;
+        const fallback = staleFallback || buildDegradedCpResponse(cp);
+        if (staleFallback) {
+          cpCache.set(cp, {
+            value: staleFallback,
+            freshUntil: Date.now() + CP_CACHE_FRESH_MS_STALE,
+          });
+          return { ...staleFallback, lookup_stale: true, lookup_degraded: false };
+        }
+        cpCache.set(cp, {
+          value: fallback,
+          freshUntil: Date.now() + CP_CACHE_FRESH_MS_FAIL,
+        });
+        if (cpCache.size > CP_CACHE_MAX) trimCache();
+        return { ...fallback, lookup_stale: false, lookup_degraded: true };
       }
       payload = await res.json();
     } catch (e) {
       if (e.status) throw e;
-      const err = new Error('Não foi possível verificar o código postal agora.');
-      err.status = 503;
-      throw err;
+      const fallback = staleFallback || buildDegradedCpResponse(cp);
+      if (staleFallback) {
+        cpCache.set(cp, {
+          value: staleFallback,
+          freshUntil: Date.now() + CP_CACHE_FRESH_MS_STALE,
+        });
+        return { ...staleFallback, lookup_stale: true, lookup_degraded: false };
+      }
+      cpCache.set(cp, {
+        value: fallback,
+        freshUntil: Date.now() + CP_CACHE_FRESH_MS_FAIL,
+      });
+      if (cpCache.size > CP_CACHE_MAX) trimCache();
+      return { ...fallback, lookup_stale: false, lookup_degraded: true };
     }
+
+    const streetData = extractStreetDataFromCpPayload(payload);
 
     const normalized = {
       postal_code: cp,
-      // A API por vezes devolve arrays quando o CP cobre várias zonas.
       city: pickFirst(payload?.Localidade) || pickFirst(payload?.localidade) || null,
       district: pickFirst(payload?.Distrito) || pickFirst(payload?.distrito) || null,
       municipality:
@@ -203,11 +290,16 @@ class ShippingService {
         pickFirst(payload?.['Município']) || null,
       parish: pickFirst(payload?.Freguesia) || pickFirst(payload?.freguesia) || null,
       country: 'PT',
+      street_suggestion: streetData.street_suggestion,
+      street_candidates: streetData.street_candidates,
     };
 
-    cpCache.set(cp, { value: normalized, expiresAt: Date.now() + CP_CACHE_TTL_MS });
+    cpCache.set(cp, {
+      value: stripLookupFlags(normalized),
+      freshUntil: Date.now() + CP_CACHE_FRESH_MS_OK,
+    });
     if (cpCache.size > CP_CACHE_MAX) trimCache();
-    return normalized;
+    return { ...normalized, lookup_stale: false, lookup_degraded: false };
   }
 }
 
@@ -279,15 +371,105 @@ function pickFirst(v) {
   return String(v);
 }
 
-// Cache simples com expiração; suficiente para o tráfego esperado.
-const CP_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
-const CP_CACHE_MAX = 1000;
+/**
+ * Extrai nomes de via a partir da resposta típica do /cp/{XXXX-XXX}
+ * (partes[].Artéria, ruas[], pontos[].rua…).
+ */
+function extractStreetDataFromCpPayload(payload) {
+  const collected = new Map();
+
+  const norm = (s) => String(s || '').replace(/\s+/g, ' ').trim();
+  const add = (raw) => {
+    const t = norm(raw);
+    if (t.length < 3) return;
+    const key = t.toLocaleLowerCase('pt-PT');
+    if (!collected.has(key)) collected.set(key, t);
+  };
+
+  const partes = payload?.partes;
+  if (Array.isArray(partes)) {
+    for (const p of partes) {
+      if (!p || typeof p !== 'object') continue;
+      const artery =
+        pickFirst(p.Artéria) ||
+        pickFirst(p.arteria) ||
+        pickFirst(p.Arruamento) ||
+        pickFirst(p.arruamento);
+      const troco = pickFirst(p.Troço) || pickFirst(p['Troço']) || pickFirst(p.troco);
+      if (artery) {
+        add(artery);
+        if (troco) add(`${artery} (${troco})`);
+      }
+    }
+  }
+
+  const ruas = payload?.ruas;
+  if (Array.isArray(ruas)) ruas.forEach((r) => add(r));
+
+  const pontos = payload?.pontos;
+  if (Array.isArray(pontos)) {
+    for (const pt of pontos) {
+      if (pt && typeof pt === 'object') add(pt.rua);
+    }
+  }
+
+  add(pickFirst(payload?.Artéria) || pickFirst(payload?.artéria));
+
+  const street_candidates = [...collected.values()].slice(0, 20);
+  const street_suggestion = street_candidates[0] || null;
+  return { street_candidates, street_suggestion };
+}
+
+function buildDegradedCpResponse(cp) {
+  return {
+    postal_code: cp,
+    city: null,
+    district: null,
+    municipality: null,
+    parish: null,
+    country: 'PT',
+    street_suggestion: null,
+    street_candidates: [],
+  };
+}
+
+function stripLookupFlags(obj) {
+  const { lookup_stale: _a, lookup_degraded: _b, ...rest } = obj;
+  return rest;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchGeoCpJson(cp) {
+  const key = (process.env.GEOAPI_PT_API_KEY || '').trim();
+  const url = `https://json.geoapi.pt/cp/${encodeURIComponent(cp)}`;
+  const headers = { Accept: 'application/json' };
+  let finalUrl = url;
+  if (key) {
+    headers['X-API-Key'] = key;
+    const u = new URL(url);
+    u.searchParams.set('api_key', key);
+    finalUrl = u.toString();
+  }
+  return fetch(finalUrl, {
+    signal: AbortSignal.timeout(8500),
+    headers,
+  });
+}
+
+// Cache por CP: resposta normalizada (sem flags efémeras lookup_*)
+const CP_CACHE_FRESH_MS_OK = 24 * 60 * 60 * 1000;
+const CP_CACHE_FRESH_MS_STALE = 2 * 60 * 60 * 1000;
+const CP_CACHE_FRESH_MS_FAIL = 5 * 60 * 1000;
+const CP_CACHE_MAX = 2500;
 const cpCache = new Map();
+const cpInflight = new Map();
 
 function trimCache() {
-  // Remove os 100 mais antigos quando estouramos o limite.
-  const sorted = [...cpCache.entries()].sort((a, b) => a[1].expiresAt - b[1].expiresAt);
-  for (let i = 0; i < 100 && sorted[i]; i++) cpCache.delete(sorted[i][0]);
+  const sorted = [...cpCache.entries()].sort((a, b) => a[1].freshUntil - b[1].freshUntil);
+  for (let i = 0; i < 150 && sorted[i]; i++) cpCache.delete(sorted[i][0]);
 }
 
 module.exports = new ShippingService();

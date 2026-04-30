@@ -77,9 +77,10 @@ class ShippingController {
   /**
    * GET /api/public/postal-code/:cp
    *
-   * Proxy + cache para o open-source `json.geoapi.pt`. Devolve
-   * { postal_code, city, district, municipality, parish, country: 'PT' }
-   * para o autocomplete do checkout.
+   * Detalhes de CP em Portugal prioritariamente através de
+   * `data/pt-postal-lookup.json` (gerado pelo script npm run build:postal-data
+   * a partir dos dados abertos Central de Dados). Opcional GeoAPI apenas com
+   * GEOAPI_PT_API_KEY quando o índice local falta neste servidor.
    */
   async lookupCp(req, res, next) {
     try {

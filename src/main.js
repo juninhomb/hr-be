@@ -30,6 +30,10 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3002',
   'http://127.0.0.1:3002',
   'http://168.119.230.7:3002',
+  // Site em PM2 com outra porta local (next start -p 3005, etc.)
+  'http://localhost:3005',
+  'http://127.0.0.1:3005',
+  'http://168.119.230.7:3005',
 ];
 
 const corsOptions = {

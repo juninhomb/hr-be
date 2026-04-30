@@ -1,5 +1,7 @@
 const db = require('../config/db');
 const ShippingService = require('./shippingService');
+const { assertValidWhatsappOrThrow, canonicalWhatsappNumber } = require('../utils/whatsappNormalize');
+const { upsertCustomerAddress } = require('./customerAddressService');
 
 /**
  * Serviços de leitura/escrita públicos para o site de vendas (hrstore-site).
@@ -96,6 +98,69 @@ class PublicService {
     return grouped[0] || null;
   }
 
+  /**
+   * Checkout: conferência por número (chave interna do cliente) + moradas usadas antes.
+   * POST `{ whatsapp_number }` — dados já associados a esse registo no backoffice.
+   */
+  async getCheckoutHints(rawWhatsapp) {
+    const wa = canonicalWhatsappNumber(rawWhatsapp);
+    if (!wa) {
+      throw publicError(400, 'WhatsApp inválido.');
+    }
+
+    const { rows: cust } = await db.query(
+      `SELECT id, full_name, email FROM customers WHERE whatsapp_number = $1`,
+      [wa],
+    );
+    if (!cust[0]) {
+      return {
+        whatsapp_number: wa,
+        customer_found: false,
+        full_name: null,
+        email: null,
+        saved_addresses: [],
+      };
+    }
+
+    const { rows } = await db.query(
+      `
+      SELECT id, label, street_name, street_number, apartment, address_obs,
+             postal_code, city, district, country, updated_at
+        FROM customer_addresses
+       WHERE customer_id = $1
+       ORDER BY updated_at DESC
+       LIMIT 12
+      `,
+      [cust[0].id],
+    );
+
+    const saved_addresses = rows.map((r) => {
+      const line1 = [r.street_name, r.street_number].filter(Boolean).join(', ');
+      const line2 = [r.postal_code, r.city].filter(Boolean).join(' ');
+      return {
+        id: r.id,
+        label: r.label,
+        street_name: r.street_name,
+        street_number: r.street_number,
+        apartment: r.apartment,
+        address_obs: r.address_obs,
+        postal_code: r.postal_code,
+        city: r.city,
+        district: r.district,
+        country: r.country,
+        summary: [line1, line2].filter(Boolean).join(' · '),
+      };
+    });
+
+    return {
+      whatsapp_number: wa,
+      customer_found: true,
+      full_name: cust[0].full_name,
+      email: cust[0].email,
+      saved_addresses,
+    };
+  }
+
   async listCategories() {
     // Inclui contagem de produtos ativos por categoria + metadados
     // (image_url, description, sort_order) usados pela home do site.
@@ -126,7 +191,7 @@ class PublicService {
   /**
    * Cria pedido vindo do site público.
    *
-   * - Faz upsert do cliente pelo `whatsapp_number` (mesma regra do CRM).
+   * - Faz upsert do cliente pela chave natural `whatsapp_number` (número usado como ID de negócio).
    * - Recalcula o total a partir dos preços da DB (NUNCA confia no cliente).
    * - Deduz stock na criação (regra "Opção B" usada em todo o sistema —
    *   ver `orderService.createManualOrder`).
@@ -141,10 +206,7 @@ class PublicService {
       throw publicError(400, 'O carrinho está vazio.');
     }
 
-    const cleanWhatsapp = String(customer.whatsapp_number).trim();
-    if (!/^\+?[0-9]{10,15}$/.test(cleanWhatsapp)) {
-      throw publicError(400, 'WhatsApp inválido — use formato +351912345678.');
-    }
+    const cleanWhatsapp = assertValidWhatsappOrThrow(customer.whatsapp_number);
 
     const isDelivery = Boolean(delivery?.is_delivery);
 
@@ -155,6 +217,7 @@ class PublicService {
     const country = (customer.country || 'PT').trim().toUpperCase().slice(0, 2);
     const postalCode = (customer.postal_code || '').trim().slice(0, 20) || null;
     const city = (customer.city || '').trim().slice(0, 150) || null;
+    const district = (customer.district || '').trim().slice(0, 120) || null;
     const phone = (customer.phone || '').replace(/\s/g, '').slice(0, 20) || null;
     if (phone && !/^\+?[0-9]{7,15}$/.test(phone)) {
       throw publicError(400, 'Telefone inválido.');
@@ -206,18 +269,19 @@ class PublicService {
     try {
       await client.query('BEGIN');
 
-      // 1) Upsert do cliente (preserva campos antigos via COALESCE)
+      // 1) Upsert do cliente (whatsapp_number UNIQUE = chave natural; merge conservador via COALESCE)
       const customerRes = await client.query(
         `INSERT INTO customers
             (full_name, whatsapp_number, email, address,
-             postal_code, city, country, phone)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+             postal_code, city, district, country, phone)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (whatsapp_number)
          DO UPDATE SET full_name   = COALESCE(EXCLUDED.full_name, customers.full_name),
                        email       = COALESCE(EXCLUDED.email,     customers.email),
                        address     = COALESCE(EXCLUDED.address,   customers.address),
                        postal_code = COALESCE(EXCLUDED.postal_code, customers.postal_code),
                        city        = COALESCE(EXCLUDED.city,        customers.city),
+                       district    = COALESCE(EXCLUDED.district,    customers.district),
                        country     = COALESCE(EXCLUDED.country,     customers.country),
                        phone       = COALESCE(EXCLUDED.phone,       customers.phone)
          RETURNING id`,
@@ -228,11 +292,32 @@ class PublicService {
           composedAddress,
           postalCode,
           city,
+          district,
           country,
           phone,
         ]
       );
       const customerId = customerRes.rows[0].id;
+
+      const deliverySnapshot = isDelivery && composedAddress ? composedAddress : null;
+
+      // Morada estruturada na agenda — várias por cliente (dedupe por fingerprint)
+      if (isDelivery) {
+        const streetNameBk = String(customer.street_name || '').trim().slice(0, 512);
+        if (streetNameBk.length >= 2 && postalCode) {
+          await upsertCustomerAddress(client, customerId, {
+            street_name: streetNameBk,
+            street_number: String(customer.street_number ?? '').trim().slice(0, 48),
+            apartment: customer.apartment?.trim() || null,
+            address_obs: customer.address_obs?.trim() || null,
+            postal_code: postalCode,
+            city,
+            district,
+            country,
+            label: customer.address_label?.trim()?.slice(0, 80) || null,
+          });
+        }
+      }
 
       // 2) Re-puxa preços e stock dos SKUs pedidos (uma única query)
       const skus = items.map((i) => String(i.sku).trim()).filter(Boolean);
@@ -251,8 +336,8 @@ class PublicService {
       const orderRes = await client.query(
         `INSERT INTO orders
             (customer_id, total_amount, status, origin, payment_method,
-             is_delivery, shipping_fee, shipping_zone_id)
-         VALUES ($1, 0, 'aguardando_pagamento', 'website', $2, $3, $4, $5)
+             is_delivery, shipping_fee, shipping_zone_id, delivery_address)
+         VALUES ($1, 0, 'aguardando_pagamento', 'website', $2, $3, $4, $5, $6)
          RETURNING id`,
         [
           customerId,
@@ -260,6 +345,7 @@ class PublicService {
           isDelivery,
           shippingFee,
           shippingZone?.id || null,
+          deliverySnapshot,
         ]
       );
       const orderId = orderRes.rows[0].id;

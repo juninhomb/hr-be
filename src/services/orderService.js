@@ -10,6 +10,36 @@ function defaultShippingFeeEur() {
   return n;
 }
 
+/** Lista pedidos com JOIN a clientes (morada combinada migrações antigas ↔ snapshot em `orders`). */
+async function queryOrdersJoinedCustomer(whereSql, params = []) {
+  const head = `
+      SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
+             o.is_delivery, o.shipping_fee,
+             c.full_name, c.whatsapp_number, c.email,
+  `;
+  const tail = `
+        FROM orders o
+        LEFT JOIN customers c ON o.customer_id = c.id
+       ${whereSql}`;
+  try {
+    const { rows } = await db.query(
+      `${head} COALESCE(o.delivery_address, c.address) AS address ${tail}`,
+      params,
+    );
+    return rows;
+  } catch (err) {
+    const msg = String(err?.message || '');
+    if (err?.code === '42703' && msg.includes('delivery_address')) {
+      const { rows } = await db.query(
+        `${head} c.address AS address ${tail}`,
+        params,
+      );
+      return rows;
+    }
+    throw err;
+  }
+}
+
 class OrderService {
   // -------------------------------------------------------------
   // Helper: anexa items[] aos pedidos já consultados
@@ -38,15 +68,10 @@ class OrderService {
   // Pedidos pendentes (origem WhatsApp / IA)
   // -------------------------------------------------------------
   async getPendingOrders() {
-    const { rows } = await db.query(`
-      SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
-             o.is_delivery, o.shipping_fee,
-             c.full_name, c.whatsapp_number, c.email, c.address
-        FROM orders o
-        LEFT JOIN customers c ON o.customer_id = c.id
-       WHERE o.status = 'aguardando_pagamento'
-       ORDER BY o.created_at DESC
-    `);
+    const rows = await queryOrdersJoinedCustomer(
+      `WHERE o.status = 'aguardando_pagamento'
+       ORDER BY o.created_at DESC`,
+    );
     return this._attachItems(rows);
   }
 
@@ -54,15 +79,10 @@ class OrderService {
   // Histórico Geral (últimos 200)
   // -------------------------------------------------------------
   async getOrderHistory() {
-    const { rows } = await db.query(`
-      SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
-             o.is_delivery, o.shipping_fee,
-             c.full_name, c.whatsapp_number, c.email, c.address
-        FROM orders o
-        LEFT JOIN customers c ON o.customer_id = c.id
-       ORDER BY o.created_at DESC
-       LIMIT 200
-    `);
+    const rows = await queryOrdersJoinedCustomer(
+      `ORDER BY o.created_at DESC
+       LIMIT 200`,
+    );
     return this._attachItems(rows);
   }
 
@@ -70,12 +90,29 @@ class OrderService {
   // Detalhe de um pedido
   // -------------------------------------------------------------
   async getOrderById(id) {
-    const { rows } = await db.query(`
-      SELECT o.*, c.full_name, c.whatsapp_number, c.email, c.address
+    let rows;
+    try {
+      ({ rows } = await db.query(`
+      SELECT o.*, c.full_name, c.whatsapp_number, c.email,
+             COALESCE(o.delivery_address, c.address) AS address
         FROM orders o
         LEFT JOIN customers c ON o.customer_id = c.id
        WHERE o.id = $1
-    `, [id]);
+    `, [id]));
+    } catch (err) {
+      const msg = String(err?.message || '');
+      if (err?.code === '42703' && msg.includes('delivery_address')) {
+        ({ rows } = await db.query(`
+      SELECT o.*, c.full_name, c.whatsapp_number, c.email,
+             c.address AS address
+        FROM orders o
+        LEFT JOIN customers c ON o.customer_id = c.id
+       WHERE o.id = $1
+    `, [id]));
+      } else {
+        throw err;
+      }
+    }
     if (!rows[0]) return null;
     const [withItems] = await this._attachItems(rows);
     return withItems;

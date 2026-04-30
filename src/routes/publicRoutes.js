@@ -21,6 +21,7 @@ router.get('/shipping-quote', ShippingController.quote);
 router.get('/postal-code/:cp', ShippingController.lookupCp);
 
 // Checkout
+router.post('/customer-hints', PublicController.customerHints);
 router.post('/orders', PublicController.createOrder);
 
 module.exports = router;

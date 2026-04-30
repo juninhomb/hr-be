@@ -46,6 +46,20 @@ class PublicController {
       next(error);
     }
   }
+
+  /** Conferência de cliente + moradas sugeridas (só identificação pelo número no checkout). */
+  async customerHints(req, res, next) {
+    try {
+      const { whatsapp_number } = req.body || {};
+      const data = await PublicService.getCheckoutHints(whatsapp_number);
+      res.json(data);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new PublicController();

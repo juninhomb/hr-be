@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS customers (
   total_orders INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   
-  CHECK (whatsapp_number ~ '^\+?[0-9]{10,15}$')
+  CHECK (whatsapp_number ~ '^[0-9]{10,15}$')
 );
 
 -- Migration: add address column if it doesn't exist yet (safe to run on existing DBs)

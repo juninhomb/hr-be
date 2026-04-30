@@ -1,0 +1,6 @@
+# Não versionar imagens enviadas — só a estrutura de pastas.
+*
+!.gitignore
+!products/
+!products/.gitkeep
+!products/placeholder.svg

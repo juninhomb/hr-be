@@ -1,0 +1,51 @@
+const PublicService = require('../services/publicService');
+
+class PublicController {
+  async listProducts(req, res, next) {
+    try {
+      const { search = '', category_id = '', featured } = req.query;
+      // featured: 'true' / '1' → só destaques; 'false' / '0' → só não-destaques;
+      // ausente / outro valor → tudo (compat com o admin).
+      let featuredFlag = null;
+      if (featured === 'true' || featured === '1') featuredFlag = true;
+      else if (featured === 'false' || featured === '0') featuredFlag = false;
+
+      const data = await PublicService.listProducts({
+        search: String(search).trim(),
+        categoryId: category_id ? parseInt(category_id, 10) : null,
+        featured: featuredFlag,
+      });
+      res.json(data);
+    } catch (error) { next(error); }
+  }
+
+  async getProduct(req, res, next) {
+    try {
+      const product = await PublicService.getProductById(req.params.id);
+      if (!product) return res.status(404).json({ error: 'Produto não encontrado' });
+      res.json(product);
+    } catch (error) { next(error); }
+  }
+
+  async listCategories(req, res, next) {
+    try {
+      const cats = await PublicService.listCategories();
+      res.json(cats);
+    } catch (error) { next(error); }
+  }
+
+  async createOrder(req, res, next) {
+    try {
+      const { customer = {}, items = [], delivery = {} } = req.body || {};
+      const result = await PublicService.createWebsiteOrder({ customer, items, delivery });
+      res.status(201).json(result);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+}
+
+module.exports = new PublicController();

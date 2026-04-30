@@ -5,10 +5,13 @@ const router = express.Router();
 const OrderController = require('../controllers/orderController');
 const AuthController = require('../controllers/authController');
 const ProductController = require('../controllers/productController');
+const CategoryController = require('../controllers/categoryController');
 const CustomerController = require('../controllers/customerController');
 const DashboardController = require('../controllers/dashboardController');
+const ShippingController = require('../controllers/shippingController');
 
 const authMiddleware = require('../config/authMiddleware');
+const { upload } = require('../config/upload');
 
 // --- ROTAS PÚBLICAS ---
 router.post('/login', AuthController.login);
@@ -33,6 +36,46 @@ router.post('/products/:productId/variants', ProductController.addVariant);
 router.put('/products/:sku', ProductController.update);
 router.delete('/products/:sku', ProductController.destroy);
 router.post('/products/:sku/add', ProductController.addStock);
+
+// Marca/desmarca produto como DESTAQUE (mostrado primeiro na home pública)
+router.patch('/products/:productId/featured', ProductController.setFeatured);
+
+// Categorias — CRUD admin (a admin gere lista + imagem na grelha da home)
+router.get('/categories', CategoryController.list);
+router.post('/categories', CategoryController.create);
+router.put('/categories/:id', CategoryController.update);
+router.delete('/categories/:id', CategoryController.destroy);
+router.post(
+  '/categories/:categoryId/image',
+  upload.single('image'),
+  CategoryController.uploadImage
+);
+router.delete('/categories/:categoryId/image', CategoryController.removeImage);
+
+// Upload / remover imagem do produto-base (fallback partilhado)
+// (multipart/form-data, field "image")
+router.post(
+  '/products/:productId/image',
+  upload.single('image'),
+  ProductController.uploadImage
+);
+router.delete('/products/:productId/image', ProductController.removeImage);
+
+// Upload / remover imagem específica de uma variante
+// Body opcional: applyToColor=true → propaga para todas as variantes da
+// mesma cor.
+router.post(
+  '/variants/:variantId/image',
+  upload.single('image'),
+  ProductController.uploadVariantImage
+);
+router.delete('/variants/:variantId/image', ProductController.removeVariantImage);
+
+// Configurações: tarifas de envio (CRUD admin)
+router.get('/shipping-zones', ShippingController.listAdmin);
+router.post('/shipping-zones', ShippingController.createAdmin);
+router.put('/shipping-zones/:id', ShippingController.updateAdmin);
+router.delete('/shipping-zones/:id', ShippingController.destroyAdmin);
 
 // CRM (Clientes)
 router.get('/customers', CustomerController.list);

@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const orderRoutes = require('./routes/orderRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 const errorHandler = require('./config/errorHandler');
 require('dotenv').config();
 
@@ -16,9 +18,18 @@ app.set('trust proxy', 1);
 // n8n roda no mesmo servidor (chamadas server-to-server),
 // portanto NÃO precisa estar nesta lista (CORS só afeta browsers).
 const ALLOWED_ORIGINS = [
+  // Admin / dashboard
   'https://app.hrstorept.com',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'http://168.119.230.7:3000',
+  // Site público (hrstore-site)
+  'https://hrstorept.com',
+  'https://www.hrstorept.com',
+  'https://loja.hrstorept.com',
+  'http://localhost:3002',
+  'http://127.0.0.1:3002',
+  'http://168.119.230.7:3002',
 ];
 
 const corsOptions = {
@@ -41,9 +52,25 @@ app.use(cors(corsOptions));
 // ==========================================
 app.use(express.json());
 
+// Servir imagens de produtos como ficheiros estáticos.
+// URLs públicas: /uploads/products/<filename>
+// (ler `src/config/upload.js` para ver como o multer grava aqui)
+app.use(
+  '/uploads',
+  express.static(path.resolve(process.cwd(), 'uploads'), {
+    maxAge: '7d',
+    fallthrough: true,
+    index: false,
+  })
+);
+
 // ==========================================
 // 3. DEFINIÇÃO DE ROTAS
 // ==========================================
+
+// Rotas PÚBLICAS do site de vendas (hrstore-site) — sem JWT.
+// Catálogo + criação de pedidos vindos do storefront.
+app.use('/api/public', publicRoutes);
 
 // O roteador centraliza as rotas. A proteção JWT acontece
 // dentro do ficheiro orderRoutes.js através do middleware.
@@ -73,7 +100,8 @@ app.listen(PORT, '0.0.0.0', () => {
   🚀 HR STORE BACKEND - MODO JWT ATIVO
   📡 Porta: ${PORT}
   🔑 Admin User: ${process.env.ADMIN_USER}
-  🔗 Endpoints protegidos em: /api/orders/*
+  🔗 Endpoints admin (JWT): /api/orders/*
+  🌐 Endpoints públicos:    /api/public/*
   ==============================================
   `);
 });

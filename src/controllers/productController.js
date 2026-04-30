@@ -16,19 +16,29 @@ class ProductController {
     } catch (error) { next(error); }
   }
 
+  async listCategories(req, res, next) {
+    try {
+      const cats = await ProductService.listCategories();
+      res.json(cats);
+    } catch (error) { next(error); }
+  }
+
   async create(req, res, next) {
     try {
-      const { name, base_price, sku, color, size, stock_quantity } = req.body;
-      // base_price pode ser 0 — valida apenas null/undefined/'')
+      const { name, base_price, sku, color, size, stock_quantity, category_id } = req.body;
       const priceNum = Number(base_price);
       if (!name || base_price === undefined || base_price === null || base_price === '' || Number.isNaN(priceNum) || priceNum < 0 || !sku) {
         return res.status(400).json({ error: 'name, base_price (≥0) e sku são obrigatórios' });
       }
       const stockNum = Number.isFinite(Number(stock_quantity)) ? Number(stock_quantity) : 0;
       const product = await ProductService.createProduct({
-        name: name.trim(), base_price: priceNum, sku: sku.trim().toUpperCase(),
-        color: color?.trim() || null, size: size?.trim() || null,
+        name: name.trim(),
+        base_price: priceNum,
+        sku: sku.trim().toUpperCase(),
+        color: color?.trim() || null,
+        size: size?.trim() || null,
         stock_quantity: stockNum,
+        category_id: category_id ?? null,
       });
       res.status(201).json(product);
     } catch (error) {
@@ -93,6 +103,85 @@ class ProductController {
       if (!product) return res.status(404).json({ error: 'Produto não encontrado' });
       
       res.json(product);
+    } catch (error) { next(error); }
+  }
+
+  // -------------------------------------------------------------
+  // Imagens
+  // -------------------------------------------------------------
+
+  /**
+   * POST /products/:productId/image (multipart/form-data, field "image")
+   * Multer já gravou o ficheiro em `uploads/products/`. Aqui só atualizamos
+   * a referência na DB.
+   */
+  async uploadImage(req, res, next) {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'Ficheiro "image" é obrigatório.' });
+      const productId = parseInt(req.params.productId, 10);
+      if (!Number.isFinite(productId)) return res.status(400).json({ error: 'productId inválido' });
+
+      const updated = await ProductService.setProductImage(productId, req.file.filename);
+      if (!updated) return res.status(404).json({ error: 'Produto não encontrado' });
+      res.json(updated);
+    } catch (error) { next(error); }
+  }
+
+  async removeImage(req, res, next) {
+    try {
+      const productId = parseInt(req.params.productId, 10);
+      if (!Number.isFinite(productId)) return res.status(400).json({ error: 'productId inválido' });
+      const result = await ProductService.removeProductImage(productId);
+      if (!result) return res.status(404).json({ error: 'Produto não encontrado' });
+      res.json(result);
+    } catch (error) { next(error); }
+  }
+
+  /**
+   * POST /products/variants/:variantId/image (multipart, field "image")
+   * Body opcional: applyToColor=true → propaga para todas as variantes da
+   * mesma cor (útil porque tipicamente foto varia por cor, não por tamanho).
+   */
+  async uploadVariantImage(req, res, next) {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'Ficheiro "image" é obrigatório.' });
+      const variantId = parseInt(req.params.variantId, 10);
+      if (!Number.isFinite(variantId)) return res.status(400).json({ error: 'variantId inválido' });
+
+      const applyToColor = String(req.body?.applyToColor ?? '').toLowerCase() === 'true';
+      const result = await ProductService.setVariantImage(variantId, req.file.filename, { applyToColor });
+      if (!result) return res.status(404).json({ error: 'Variante não encontrada' });
+      res.json(result);
+    } catch (error) { next(error); }
+  }
+
+  async removeVariantImage(req, res, next) {
+    try {
+      const variantId = parseInt(req.params.variantId, 10);
+      if (!Number.isFinite(variantId)) return res.status(400).json({ error: 'variantId inválido' });
+      const result = await ProductService.removeVariantImage(variantId);
+      if (!result) return res.status(404).json({ error: 'Variante não encontrada' });
+      res.json(result);
+    } catch (error) { next(error); }
+  }
+
+  // -------------------------------------------------------------
+  // Destaque (marca/desmarca produto para a homepage)
+  // -------------------------------------------------------------
+
+  async setFeatured(req, res, next) {
+    try {
+      const productId = parseInt(req.params.productId, 10);
+      if (!Number.isFinite(productId)) {
+        return res.status(400).json({ error: 'productId inválido' });
+      }
+      const value = req.body?.is_featured;
+      if (typeof value !== 'boolean') {
+        return res.status(400).json({ error: '`is_featured` (boolean) é obrigatório.' });
+      }
+      const updated = await ProductService.setFeatured(productId, value);
+      if (!updated) return res.status(404).json({ error: 'Produto não encontrado' });
+      res.json(updated);
     } catch (error) { next(error); }
   }
 }

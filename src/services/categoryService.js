@@ -27,7 +27,12 @@ class CategoryService {
         c.description,
         c.image_url,
         c.sort_order,
-        COUNT(p.id) FILTER (WHERE p.is_active = true)::int AS product_count,
+        COUNT(p.id) FILTER (WHERE
+          EXISTS (
+            SELECT 1 FROM product_variants pv
+            WHERE pv.product_id = p.id AND COALESCE(pv.is_active, true)
+          )
+        )::int AS product_count,
         c.created_at
       FROM categories c
       LEFT JOIN products p ON p.category_id = c.id

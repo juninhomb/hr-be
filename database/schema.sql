@@ -49,13 +49,15 @@ CREATE TABLE IF NOT EXISTS product_variants (
   color VARCHAR(50),
   size VARCHAR(20),
   stock_quantity INTEGER DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
+
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_product_variants_product_id ON product_variants(product_id);
 CREATE INDEX idx_product_variants_sku ON product_variants(sku);
+CREATE INDEX idx_product_variants_is_active ON product_variants(is_active);
 CREATE INDEX idx_product_variants_color_size ON product_variants(color, size);
 
 -- =====================================================

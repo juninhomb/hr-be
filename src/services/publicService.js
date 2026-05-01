@@ -7,38 +7,75 @@ const { upsertCustomerAddress } = require('./customerAddressService');
 /**
  * Serviços de leitura/escrita públicos para o site de vendas (hrstore-site).
  *
- * Princípios:
- *  - Apenas devolve produtos ATIVOS (`products.is_active = true`).
- *  - Agrupa variantes por produto (em vez de devolver linha por SKU).
- *  - Nunca confia em preços vindos do cliente — recalcula sempre a partir da DB.
- *  - O fluxo de checkout cria SEMPRE pedidos `aguardando_pagamento` com
- *    `origin = 'website'`, deixando a confirmação para o admin (mesmo modelo
- *    usado para pedidos vindos do bot WhatsApp via n8n).
+ * Visibilidade na loja só depende das variantes (`product_variants.is_active`).
+ * Sem variantes activas o produto não aparece — para remover um modelo inteiro,
+ * desactiva todas as variantes no backoffice (`products.is_active` não influencia aqui).
+ *
+ * Sem migração da coluna `is_active` nas variantes: modo legado (todas contadas como activas).
+ * Queries agrupam variantes por produto no JS.
+ * Checkout devolve pedidos `aguardando_pagamento`, `origin = 'website'`.
  */
+
+function isMissingIsActiveColumn(err) {
+  return Boolean(
+    err &&
+      err.code === '42703' &&
+      /is_active/i.test(String(err.message || '')),
+  );
+}
+
+/**
+ * Um produto entra nas listagens quando existe pelo menos uma variante elegível:
+ * (`is_active` na variante quando a coluna existir.)
+ */
+function catalogFragments(useVariantIsActive) {
+  const v0Active = useVariantIsActive ? ' AND COALESCE(v0.is_active, true)' : '';
+  const joinVActive = useVariantIsActive ? ' AND COALESCE(v.is_active, true)' : '';
+
+  const sqlCatalogProductBasics = () =>
+    `EXISTS (
+      SELECT 1 FROM product_variants v0
+      WHERE v0.product_id = p.id${v0Active}
+    )`;
+
+  return { sqlCatalogProductBasics, joinVActive };
+}
+
+function buildCheckoutVariantsSql(useVariantIsActive) {
+  const vLine = useVariantIsActive ? '\n            AND COALESCE(v.is_active, true)' : '';
+  return `SELECT v.id, v.sku, v.stock_quantity, p.base_price, p.name
+           FROM product_variants v
+           INNER JOIN products p ON p.id = v.product_id
+          WHERE v.sku = ANY($1::text[])${vLine}`;
+}
 class PublicService {
   // -------------------------------------------------------------
   // Catálogo
   // -------------------------------------------------------------
 
   async listProducts({ search = '', categoryId = null, featured = null } = {}) {
-    const params = [];
-    const where = ['p.is_active = true'];
+    const exec = async (useVa) => {
+      const frag = catalogFragments(useVa);
+      const params = [];
+      const where = [frag.sqlCatalogProductBasics()];
 
-    if (search) {
-      params.push(`%${search}%`);
-      where.push(`(p.name ILIKE $${params.length} OR v.sku ILIKE $${params.length} OR v.color ILIKE $${params.length})`);
-    }
-    if (categoryId) {
-      params.push(parseInt(categoryId, 10));
-      where.push(`p.category_id = $${params.length}`);
-    }
-    if (featured === true) {
-      where.push(`p.is_featured = true`);
-    } else if (featured === false) {
-      where.push(`p.is_featured = false`);
-    }
+      if (search) {
+        params.push(`%${search}%`);
+        where.push(
+          `(p.name ILIKE $${params.length} OR v.sku ILIKE $${params.length} OR v.color ILIKE $${params.length})`,
+        );
+      }
+      if (categoryId) {
+        params.push(parseInt(categoryId, 10));
+        where.push(`p.category_id = $${params.length}`);
+      }
+      if (featured === true) {
+        where.push(`p.is_featured = true`);
+      } else if (featured === false) {
+        where.push(`p.is_featured = false`);
+      }
 
-    const sql = `
+      const sql = `
       SELECT
         p.id              AS product_id,
         p.name,
@@ -55,22 +92,38 @@ class PublicService {
         v.stock_quantity,
         v.image_url       AS variant_image_url
       FROM products p
-      LEFT JOIN product_variants v ON v.product_id = p.id
+      LEFT JOIN product_variants v ON v.product_id = p.id${frag.joinVActive}
       LEFT JOIN categories c ON c.id = p.category_id
       WHERE ${where.join(' AND ')}
       ORDER BY p.is_featured DESC, p.name ASC, v.id ASC
     `;
 
-    const { rows } = await db.query(sql, params);
-    return groupProductRows(rows);
+      const { rows } = await db.query(sql, params);
+      return rows;
+    };
+
+    try {
+      const rows = await exec(true);
+      return groupProductRows(rows);
+    } catch (err) {
+      if (!isMissingIsActiveColumn(err)) throw err;
+      console.warn(
+        '[PublicService.listProducts] Coluna product_variants.is_active em falta — corre '
+        + 'database/migrations/2026-05-01_variant_is_active.sql. A usar listagem legada.',
+      );
+      const rows = await exec(false);
+      return groupProductRows(rows);
+    }
   }
 
   async getProductById(id) {
     const productId = parseInt(id, 10);
     if (!Number.isFinite(productId)) return null;
 
-    const { rows } = await db.query(
-      `
+    const exec = async (useVa) => {
+      const frag = catalogFragments(useVa);
+      const { rows } = await db.query(
+        `
       SELECT
         p.id              AS product_id,
         p.name,
@@ -87,16 +140,31 @@ class PublicService {
         v.stock_quantity,
         v.image_url       AS variant_image_url
       FROM products p
-      LEFT JOIN product_variants v ON v.product_id = p.id
+      LEFT JOIN product_variants v ON v.product_id = p.id${frag.joinVActive}
       LEFT JOIN categories c ON c.id = p.category_id
-      WHERE p.id = $1 AND p.is_active = true
+      WHERE p.id = $1 AND ${frag.sqlCatalogProductBasics()}
       ORDER BY v.id ASC
       `,
-      [productId]
-    );
+        [productId],
+      );
+      return rows;
+    };
+
+    let rows;
+    try {
+      rows = await exec(true);
+    } catch (err) {
+      if (!isMissingIsActiveColumn(err)) throw err;
+      console.warn(
+        '[PublicService.getProductById] product_variants.is_active em falta — modo legado.',
+      );
+      rows = await exec(false);
+    }
 
     const grouped = groupProductRows(rows);
-    return grouped[0] || null;
+    const p = grouped[0];
+    if (!p || !p.variants?.length) return null;
+    return p;
   }
 
   /**
@@ -163,26 +231,41 @@ class PublicService {
   }
 
   async listCategories() {
-    // Inclui contagem de produtos ativos por categoria + metadados
-    // (image_url, description, sort_order) usados pela home do site.
-    //
-    // A migration `2026-04-30_featured_and_category_images.sql` garante
-    // que estas colunas existem em todos os ambientes — ver pasta
-    // `database/migrations/` para detalhes.
-    const { rows } = await db.query(`
+    const exec = async (useVa) => {
+      const v0Tail = useVa ? ' AND COALESCE(v0.is_active, true)' : '';
+
+      const { rows } = await db.query(
+        `
       SELECT
         c.id,
         c.name,
         c.description,
         c.image_url,
         c.sort_order,
-        COUNT(p.id) FILTER (WHERE p.is_active = true)::int AS product_count
+        COUNT(p.id) FILTER (WHERE
+          EXISTS (
+            SELECT 1 FROM product_variants v0
+            WHERE v0.product_id = p.id${v0Tail}
+          )
+        )::int AS product_count
       FROM categories c
       LEFT JOIN products p ON p.category_id = c.id
       GROUP BY c.id
       ORDER BY c.sort_order ASC, c.name ASC
-    `);
-    return rows;
+    `,
+      );
+      return rows;
+    };
+
+    try {
+      return await exec(true);
+    } catch (err) {
+      if (!isMissingIsActiveColumn(err)) throw err;
+      console.warn(
+        '[PublicService.listCategories] product_variants.is_active em falta — modo legado.',
+      );
+      return exec(false);
+    }
   }
 
   // -------------------------------------------------------------
@@ -368,13 +451,16 @@ class PublicService {
       const skus = items.map((i) => String(i.sku).trim()).filter(Boolean);
       if (!skus.length) throw publicError(400, 'Itens inválidos.');
 
-      const variantsRes = await client.query(
-        `SELECT v.id, v.sku, v.stock_quantity, p.base_price, p.name
-           FROM product_variants v
-           INNER JOIN products p ON p.id = v.product_id
-          WHERE v.sku = ANY($1::text[]) AND p.is_active = true`,
-        [skus]
-      );
+      let variantsRes;
+      try {
+        variantsRes = await client.query(buildCheckoutVariantsSql(true), [skus]);
+      } catch (vqErr) {
+        if (!isMissingIsActiveColumn(vqErr)) throw vqErr;
+        console.warn(
+          '[createWebsiteOrder] product_variants.is_active em falta — validação SKU legada.',
+        );
+        variantsRes = await client.query(buildCheckoutVariantsSql(false), [skus]);
+      }
       const bySku = new Map(variantsRes.rows.map((r) => [r.sku, r]));
 
       // 3) Cria order header com total temporário (vai ser actualizado)

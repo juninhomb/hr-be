@@ -5,13 +5,14 @@ const { UPLOAD_DIR, toPublicUrl } = require('../config/upload');
 
 class ProductService {
   async getAllProducts(search = '') {
-    try {
-      // Devolve linha-por-variante (formato esperado pelo dashboard admin).
-      // Inclui:
-      //  - image_url      → da VARIANTE (override específico, pode ser null)
-      //  - product_image  → do PRODUTO-base (fallback partilhado entre variantes)
-      // O frontend usa: variant_image_url ?? product_image ?? <CSS placeholder>
-      const query = `
+    const param = [`%${search}%`];
+    const mapRows = (rows) =>
+      rows.map((r) => ({
+        ...r,
+        image_url: r.variant_image || r.product_image || null,
+      }));
+
+    const baseQuery = (variantSql) => `
         SELECT 
           v.id,
           p.id                    AS product_id,
@@ -25,7 +26,8 @@ class ProductService {
           v.sku,
           v.color,
           v.size,
-          v.stock_quantity        AS stock
+          v.stock_quantity        AS stock,
+          ${variantSql} AS variant_is_active
         FROM product_variants v
         INNER JOIN products p ON v.product_id = p.id
         LEFT JOIN categories c ON c.id = p.category_id
@@ -33,20 +35,31 @@ class ProductService {
            OR p.name ILIKE $1
         ORDER BY p.is_featured DESC, p.name ASC, v.sku ASC
       `;
-      
-      const { rows } = await db.query(query, [`%${search}%`]);
-      console.log(`✅ ${rows.length} variações carregadas com sucesso.`);
-      // Compat: também devolvemos `image_url` (= variant ?? product) para
-      // simplificar o frontend antigo enquanto migra.
-      return rows.map((r) => ({
-        ...r,
-        image_url: r.variant_image || r.product_image || null,
-      }));
 
-    } catch (error) {
-      console.error("❌ Erro ao listar produtos:", error.message);
-      const fallback = await db.query(`SELECT *, stock_quantity as stock FROM product_variants LIMIT 50`);
-      return fallback.rows;
+    try {
+      const { rows } = await db.query(baseQuery('v.is_active'), param);
+      console.log(`✅ ${rows.length} variações carregadas com sucesso.`);
+      return mapRows(rows);
+    } catch (err) {
+      // Coluna em falta (ex.: migração 2026-05-01 não aplicada) — nunca usar
+      // SELECT * só em variantes: o admin perdia nome/categoria em todas as linhas.
+      const missingCol = err && err.code === '42703';
+      if (!missingCol) {
+        console.error('❌ Erro ao listar produtos:', err.message);
+        throw err;
+      }
+      console.warn(
+        '[ProductService.getAllProducts] Query com is_active falhou; a repetir sem essas colunas. Corre a migração 2026-05-01_variant_is_active.sql',
+        err.message,
+      );
+      try {
+        const { rows } = await db.query(baseQuery('TRUE'), param);
+        return mapRows(rows);
+      } catch (err2) {
+        if (err2 && err2.code !== '42703') throw err2;
+        const { rows } = await db.query(baseQuery('TRUE'), param);
+        return mapRows(rows);
+      }
     }
   }
 
@@ -87,41 +100,39 @@ class ProductService {
     return rows[0] || null;
   }
 
-  async addVariantToProduct(productId, { sku, color, size, stock_quantity = 0 }) {
+  async addVariantToProduct(productId, { sku, color, size, stock_quantity = 0, is_active = true }) {
     const productRes = await db.query(`SELECT id, name, base_price FROM products WHERE id = $1`, [productId]);
     if (!productRes.rows[0]) return null;
+    const variantActive = is_active === undefined || is_active === null ? true : Boolean(is_active);
+
     const { rows } = await db.query(
-      `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [productId, sku, color || null, size || null, stock_quantity || 0]
+      [productId, sku, color || null, size || null, stock_quantity || 0, variantActive]
     );
     return { ...rows[0], name: productRes.rows[0].name, price: productRes.rows[0].base_price };
   }
 
   async updateProduct(sku, data) {
-    const { stock_quantity, color, size, name, base_price, category_id } = data;
+    const {
+      stock_quantity, color, size, name, base_price, category_id,
+      variant_is_active,
+    } = data;
     const client = await db.connect();
     try {
       await client.query('BEGIN');
 
-      const variantRes = await client.query(
-        `UPDATE product_variants
-         SET stock_quantity = COALESCE($1, stock_quantity),
-             color = COALESCE($2, color),
-             size = COALESCE($3, size)
-         WHERE sku = $4
-         RETURNING product_id`,
-        [stock_quantity ?? null, color ?? null, size ?? null, sku]
+      const lockRes = await client.query(
+        `SELECT product_id FROM product_variants WHERE sku = $1 FOR UPDATE`,
+        [sku],
       );
-
-      if (!variantRes.rows[0]) {
+      if (!lockRes.rows[0]) {
         await client.query('ROLLBACK');
         return null;
       }
+      const productId = lockRes.rows[0].product_id;
 
-      // Atualiza campos do produto-base se algum deles foi enviado.
-      // category_id é tratado à parte para permitir limpar (NULL explícito).
       if (
         name !== undefined ||
         base_price !== undefined ||
@@ -140,14 +151,35 @@ class ProductService {
             name ?? null,
             base_price ?? null,
             category_id === '' || category_id === null ? null : category_id ?? null,
-            category_id !== undefined,                 // só altera se vier no payload
-            variantRes.rows[0].product_id,
-          ]
+            category_id !== undefined,
+            productId,
+          ],
         );
       }
 
+      const variantExplicit = variant_is_active !== undefined;
+      const variantValue =
+        variant_is_active === undefined ? null : Boolean(variant_is_active);
+
+      await client.query(
+        `UPDATE product_variants
+         SET stock_quantity = COALESCE($1, stock_quantity),
+             color = COALESCE($2, color),
+             size = COALESCE($3, size),
+             is_active = CASE WHEN $5::boolean THEN $6 ELSE is_active END
+         WHERE sku = $4`,
+        [
+          stock_quantity ?? null,
+          color ?? null,
+          size ?? null,
+          sku,
+          variantExplicit,
+          variantExplicit ? variantValue : null,
+        ],
+      );
+
       await client.query('COMMIT');
-      return variantRes.rows[0];
+      return { product_id: productId };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -170,6 +202,7 @@ class ProductService {
   async createProduct(data) {
     const {
       name, base_price, sku, color, size, stock_quantity = 0, category_id,
+      variant_is_active: variantIsActive,
     } = data;
 
     const client = await db.connect();
@@ -182,17 +215,29 @@ class ProductService {
           ? null
           : Number(category_id);
 
+      const wantsVariant =
+        variantIsActive === undefined || variantIsActive === null ? true : Boolean(variantIsActive);
+
       const productRes = await client.query(
-        `INSERT INTO products (name, base_price, category_id) VALUES ($1, $2, $3) RETURNING id`,
-        [name, base_price, cleanCategoryId]
+        `INSERT INTO products (name, base_price, category_id)
+         VALUES ($1, $2, $3)
+         RETURNING id`,
+        [name, base_price, cleanCategoryId],
       );
       const productId = productRes.rows[0].id;
 
       const variantRes = await client.query(
-        `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [productId, sku, color, size, stock_quantity]
+        [
+          productId,
+          sku,
+          color,
+          size,
+          stock_quantity,
+          wantsVariant,
+        ]
       );
 
       await client.query('COMMIT');

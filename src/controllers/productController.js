@@ -25,7 +25,7 @@ class ProductController {
 
   async create(req, res, next) {
     try {
-      const { name, base_price, sku, color, size, stock_quantity, category_id } = req.body;
+      const { name, base_price, sku, color, size, stock_quantity, category_id, variant_is_active } = req.body;
       const priceNum = Number(base_price);
       if (!name || base_price === undefined || base_price === null || base_price === '' || Number.isNaN(priceNum) || priceNum < 0 || !sku) {
         return res.status(400).json({ error: 'name, base_price (≥0) e sku são obrigatórios' });
@@ -39,6 +39,7 @@ class ProductController {
         size: size?.trim() || null,
         stock_quantity: stockNum,
         category_id: category_id ?? null,
+        variant_is_active,
       });
       res.status(201).json(product);
     } catch (error) {
@@ -53,7 +54,7 @@ class ProductController {
     try {
       const productId = parseInt(req.params.productId, 10);
       if (!productId) return res.status(400).json({ error: 'productId inválido' });
-      const { sku, color, size, stock_quantity } = req.body;
+      const { sku, color, size, stock_quantity, is_active } = req.body;
       if (!sku) return res.status(400).json({ error: 'sku é obrigatório' });
       const stockNum = Number.isFinite(Number(stock_quantity)) ? Number(stock_quantity) : 0;
       const variant = await ProductService.addVariantToProduct(productId, {
@@ -61,6 +62,7 @@ class ProductController {
         color: color?.trim() || null,
         size: size?.trim() || null,
         stock_quantity: stockNum,
+        is_active,
       });
       if (!variant) return res.status(404).json({ error: 'Produto não encontrado' });
       res.status(201).json(variant);

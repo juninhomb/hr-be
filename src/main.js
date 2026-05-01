@@ -1,11 +1,14 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const orderRoutes = require('./routes/orderRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const errorHandler = require('./config/errorHandler');
+const { generalPublicLimiter } = require('./config/publicRateLimit');
+const publicApiTokenMiddleware = require('./config/publicApiTokenMiddleware');
 const stripeWebhookController = require('./controllers/stripeWebhookController');
-require('dotenv').config();
 
 const app = express();
 
@@ -13,12 +16,18 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ==========================================
-// 1. CORS — domínios fixos (produção + dev)
+// 1. CORS — domínios fixos (produção + dev) + extra via env
 // ==========================================
 // Origens permitidas: front em produção e dev local.
 // n8n roda no mesmo servidor (chamadas server-to-server),
 // portanto NÃO precisa estar nesta lista (CORS só afeta browsers).
-const ALLOWED_ORIGINS = [
+// CORS_ALLOWED_ORIGINS=comma,separated opcional acrescenta origens sem editar código.
+function parseCsvOrigins(raw) {
+  if (!raw || typeof raw !== 'string') return [];
+  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+const STATIC_ALLOWED_ORIGINS = [
   // Admin / dashboard
   'https://app.hrstorept.com',
   'http://localhost:3000',
@@ -37,6 +46,11 @@ const ALLOWED_ORIGINS = [
   'http://168.119.230.7:3005',
 ];
 
+const ALLOWED_ORIGINS = [...new Set([
+  ...STATIC_ALLOWED_ORIGINS,
+  ...parseCsvOrigins(process.env.CORS_ALLOWED_ORIGINS),
+])];
+
 const corsOptions = {
   origin(origin, callback) {
     // Permite ferramentas sem Origin (curl, n8n, health checks)
@@ -45,7 +59,7 @@ const corsOptions = {
     return callback(new Error(`CORS bloqueado para origem: ${origin}`));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Public-Token'],
   credentials: false, // JWT vai no header Authorization, sem cookies
   maxAge: 86400,      // cache do preflight por 24h
 };
@@ -86,7 +100,10 @@ app.use(
 
 // Rotas PÚBLICAS do site de vendas (hrstore-site) — sem JWT.
 // Catálogo + criação de pedidos vindos do storefront.
-app.use('/api/public', publicRoutes);
+// Rate-limit global (/api/public; POST têm segundo limite no router).
+// TOKEN opcional (PUBLIC_API_TOKEN) depois do limiter para contabilizar pings sem header.
+// Nota: /api/public/stripe-webhook acima não passa aqui — registo próprio antes do router.
+app.use('/api/public', generalPublicLimiter, publicApiTokenMiddleware, publicRoutes);
 
 // O roteador centraliza as rotas. A proteção JWT acontece
 // dentro do ficheiro orderRoutes.js através do middleware.

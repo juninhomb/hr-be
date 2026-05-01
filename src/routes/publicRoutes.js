@@ -9,6 +9,7 @@ const router = express.Router();
 
 const PublicController = require('../controllers/publicController');
 const ShippingController = require('../controllers/shippingController');
+const { strictPublicPostLimiter } = require('../config/publicRateLimit');
 
 // Catálogo
 router.get('/products', PublicController.listProducts);
@@ -20,9 +21,9 @@ router.get('/shipping-zones', ShippingController.listPublic);
 router.get('/shipping-quote', ShippingController.quote);
 router.get('/postal-code/:cp', ShippingController.lookupCp);
 
-// Checkout
-router.post('/customer-hints', PublicController.customerHints);
-router.post('/orders', PublicController.createOrder);
-router.post('/orders/stripe-checkout', PublicController.createStripeCheckout);
+// Checkout (limite próprio mais apertado, em série com o da montagem em main.js)
+router.post('/customer-hints', strictPublicPostLimiter, PublicController.customerHints);
+router.post('/orders', strictPublicPostLimiter, PublicController.createOrder);
+router.post('/orders/stripe-checkout', strictPublicPostLimiter, PublicController.createStripeCheckout);
 
 module.exports = router;

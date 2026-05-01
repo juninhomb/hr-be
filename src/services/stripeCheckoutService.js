@@ -2,15 +2,21 @@ const Stripe = require('stripe');
 const db = require('../config/db');
 
 /**
- * Stripe Checkout PT (EUR): cartão + MB Way (activar método na Dashboard Stripe);
- * Klarna só com STRIPE_ENABLE_KLARNA=1 quando a conta permitir.
+ * Stripe Checkout PT (EUR): apenas cartão por defeito; Klarna só com STRIPE_ENABLE_KLARNA=1.
+ *
+ * MB Way no próprio Stripe está desactivado por defeito — no site público combinamo‑lo
+ * pelo WhatsApp (junto com transferência). Para voltar a oferecer MB Way na página Stripe:
+ * STRIPE_ENABLE_MBWAY_IN_CHECKOUT=1 (é preciso activar MB WAY na Dashboard).
+ *
+ * `@deprecated` legacy — STRIPE_DISABLE_MBWAY passa a ser ignorado em favor da opt‑in acima.
  */
 function stripeCheckoutPaymentMethodTypes() {
-  const stripMbWay =
-    process.env.STRIPE_DISABLE_MBWAY === '1'
-    || /^true$/i.test(String(process.env.STRIPE_DISABLE_MBWAY || '').trim());
+  const enableMbWayInStripe =
+    process.env.STRIPE_ENABLE_MBWAY_IN_CHECKOUT === '1'
+    || /^true$/i.test(String(process.env.STRIPE_ENABLE_MBWAY_IN_CHECKOUT || '').trim());
   /** @type {string[]} */
-  const types = stripMbWay ? ['card'] : ['card', 'mb_way'];
+  const types = ['card'];
+  if (enableMbWayInStripe) types.push('mb_way');
   const klarna =
     process.env.STRIPE_ENABLE_KLARNA === '1'
     || /^true$/i.test(String(process.env.STRIPE_ENABLE_KLARNA || '').trim());

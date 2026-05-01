@@ -76,6 +76,14 @@ async function queryOrdersJoinedCustomer(whereSql, params = []) {
   }
 }
 
+/** Garante JSON/API com `customer_notes` explícito (evita omitir undefined no admin). */
+function normalizeCustomerNotesOnOrder(row) {
+  if (!row || typeof row !== 'object') return row;
+  const v = row.customer_notes;
+  const s = v == null ? '' : String(v).trim();
+  return { ...row, customer_notes: s === '' ? null : s };
+}
+
 class OrderService {
   // -------------------------------------------------------------
   // Helper: anexa items[] aos pedidos já consultados
@@ -97,7 +105,7 @@ class OrderService {
       (acc[it.order_id] = acc[it.order_id] || []).push(it);
       return acc;
     }, {});
-    return rows.map(r => ({ ...r, items: grouped[r.id] || [] }));
+    return rows.map(r => normalizeCustomerNotesOnOrder({ ...r, items: grouped[r.id] || [] }));
   }
 
   // -------------------------------------------------------------

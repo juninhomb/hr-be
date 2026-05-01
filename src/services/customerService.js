@@ -11,9 +11,17 @@ function cleanOpt(val, maxLen) {
 class CustomerService {
   async getAllCustomers(search = '') {
     const q = `%${search}%`;
+    // total_orders é DERIVADO da tabela `orders` (status pago/enviado/entregue) para
+    // evitar dessincronização. O contador denormalizado em `customers.total_orders`
+    // pode ficar errado em fluxos como cancelar→apagar, ou inserts via n8n.
     const fullQuery = `
-      SELECT c.id, c.full_name, c.whatsapp_number, c.email, c.address, c.total_orders, c.created_at,
+      SELECT c.id, c.full_name, c.whatsapp_number, c.email, c.address, c.created_at,
              c.postal_code, c.city, c.district, c.country, c.phone,
+             COALESCE((
+               SELECT COUNT(*)::int FROM orders o
+                WHERE o.customer_id = c.id
+                  AND o.status IN ('pago','enviado','entregue')
+             ), 0) AS total_orders,
              (SELECT COUNT(*)::int FROM customer_addresses a WHERE a.customer_id = c.id) AS address_count
       FROM customers c
       WHERE c.full_name ILIKE $1 OR c.whatsapp_number ILIKE $1
@@ -22,7 +30,12 @@ class CustomerService {
       ORDER BY c.full_name ASC NULLS LAST, c.created_at DESC
     `;
     const legacyQuery = `
-      SELECT c.id, c.full_name, c.whatsapp_number, c.email, c.address, c.total_orders, c.created_at,
+      SELECT c.id, c.full_name, c.whatsapp_number, c.email, c.address, c.created_at,
+             COALESCE((
+               SELECT COUNT(*)::int FROM orders o
+                WHERE o.customer_id = c.id
+                  AND o.status IN ('pago','enviado','entregue')
+             ), 0) AS total_orders,
              0::int AS address_count
       FROM customers c
       WHERE c.full_name ILIKE $1 OR c.whatsapp_number ILIKE $1
@@ -61,7 +74,17 @@ class CustomerService {
     const wa = canonicalWhatsappNumber(rawWhatsapp);
     if (!wa) return null;
 
-    const { rows } = await db.query(`SELECT * FROM customers WHERE whatsapp_number = $1`, [wa]);
+    const { rows } = await db.query(
+      `SELECT c.*,
+              COALESCE((
+                SELECT COUNT(*)::int FROM orders o
+                 WHERE o.customer_id = c.id
+                   AND o.status IN ('pago','enviado','entregue')
+              ), 0) AS total_orders
+         FROM customers c
+        WHERE c.whatsapp_number = $1`,
+      [wa],
+    );
     const customer = rows[0];
     if (!customer) return null;
 

@@ -59,7 +59,7 @@ const corsOptions = {
     return callback(new Error(`CORS bloqueado para origem: ${origin}`));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Public-Token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Public-Token', 'idempotency-key'],
   credentials: false, // JWT vai no header Authorization, sem cookies
   maxAge: 86400,      // cache do preflight por 24h
 };
@@ -126,6 +126,29 @@ app.use(errorHandler);
 // 5. INICIALIZAÇÃO DO SERVIDOR
 // ==========================================
 const PORT = process.env.PORT || 3001;
+
+// Validação fail-fast de variáveis críticas. Sem JWT_SECRET o login emite
+// tokens com `undefined` como segredo (jsonwebtoken faz throw runtime no
+// primeiro pedido) — preferimos parar aqui e dar mensagem clara.
+// Em produção exigimos pelo menos 32 chars (recomendação OWASP); em dev
+// aceitamos qualquer valor não-vazio mas avisamos se for curto.
+const JWT_SECRET = process.env.JWT_SECRET || '';
+const IS_PROD = process.env.NODE_ENV === 'production';
+if (!JWT_SECRET) {
+  console.error('🛑 JWT_SECRET em falta. Aborta.');
+  process.exit(1);
+}
+if (IS_PROD && JWT_SECRET.length < 32) {
+  console.error(`🛑 JWT_SECRET demasiado curto em produção (${JWT_SECRET.length} < 32). Aborta.`);
+  process.exit(1);
+}
+if (!IS_PROD && JWT_SECRET.length < 16) {
+  console.warn(`⚠️  JWT_SECRET com apenas ${JWT_SECRET.length} chars — OK em dev, mas em produção use ≥ 32 chars.`);
+}
+if (!process.env.ADMIN_USER || !process.env.ADMIN_PASS) {
+  console.error('🛑 ADMIN_USER/ADMIN_PASS em falta. Aborta.');
+  process.exit(1);
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`

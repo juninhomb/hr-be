@@ -1,5 +1,17 @@
 const PublicService = require('../services/publicService');
 
+/**
+ * Idempotency-Key: aceitamos só strings curtas (≤ 80 chars) e seguras
+ * (alfanuméricos + `-_`). Qualquer outra coisa é tratada como ausente —
+ * preferimos criar pedido novo do que devolver um pedido errado.
+ */
+function sanitizeIdempotencyKey(raw) {
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed.length > 80) return null;
+  return /^[A-Za-z0-9_-]+$/.test(trimmed) ? trimmed : null;
+}
+
 class PublicController {
   async listProducts(req, res, next) {
     try {
@@ -37,7 +49,8 @@ class PublicController {
   async createOrder(req, res, next) {
     try {
       const { customer = {}, items = [], delivery = {} } = req.body || {};
-      const result = await PublicService.createWebsiteOrder({ customer, items, delivery });
+      const idempotencyKey = sanitizeIdempotencyKey(req.headers['idempotency-key']);
+      const result = await PublicService.createWebsiteOrder({ customer, items, delivery, idempotencyKey });
       res.status(201).json(result);
     } catch (error) {
       if (error.status) {
@@ -63,6 +76,7 @@ class PublicController {
         delivery,
         success_url: successUrl,
         cancel_url: cancelUrl,
+        idempotencyKey: sanitizeIdempotencyKey(req.headers['idempotency-key']),
       });
       res.status(201).json(data);
     } catch (error) {

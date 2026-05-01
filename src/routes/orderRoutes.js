@@ -12,9 +12,10 @@ const ShippingController = require('../controllers/shippingController');
 
 const authMiddleware = require('../config/authMiddleware');
 const { upload } = require('../config/upload');
+const { loginLimiter } = require('../config/publicRateLimit');
 
 // --- ROTAS PÚBLICAS ---
-router.post('/login', AuthController.login);
+router.post('/login', loginLimiter, AuthController.login);
 
 // --- ROTAS PROTEGIDAS (Requerem Token) ---
 router.use(authMiddleware);

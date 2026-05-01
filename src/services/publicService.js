@@ -199,12 +199,35 @@ class PublicService {
    * - Gera pedido com `origin = 'website'` e `status = 'aguardando_pagamento'`,
    *   ficando visível em /pendentes do dashboard admin.
    */
-  async createWebsiteOrder({ customer, items, delivery }) {
+  async createWebsiteOrder({ customer, items, delivery, idempotencyKey = null }) {
     if (!customer?.whatsapp_number) {
       throw publicError(400, 'whatsapp_number é obrigatório.');
     }
     if (!Array.isArray(items) || items.length === 0) {
       throw publicError(400, 'O carrinho está vazio.');
+    }
+
+    // Idempotency: se a key já foi usada, devolve o pedido existente em vez
+    // de criar duplicado. Defesa contra retries do navegador.
+    if (idempotencyKey) {
+      const existing = await db.query(
+        `SELECT id, customer_id, total_amount, shipping_fee, shipping_zone_id, status
+           FROM orders WHERE idempotency_key = $1`,
+        [idempotencyKey]
+      );
+      if (existing.rows[0]) {
+        const o = existing.rows[0];
+        return {
+          order_id: o.id,
+          customer_id: o.customer_id,
+          items_total: Number(o.total_amount) - Number(o.shipping_fee || 0),
+          shipping_fee: Number(o.shipping_fee || 0),
+          shipping_zone: null,
+          total_amount: Number(o.total_amount),
+          status: o.status,
+          idempotent_replay: true,
+        };
+      }
     }
 
     const cleanWhatsapp = assertValidWhatsappOrThrow(customer.whatsapp_number);
@@ -357,8 +380,9 @@ class PublicService {
       const orderRes = await client.query(
         `INSERT INTO orders
             (customer_id, total_amount, status, origin, payment_method,
-             is_delivery, shipping_fee, shipping_zone_id, delivery_address)
-         VALUES ($1, 0, 'aguardando_pagamento', 'website', $2, $3, $4, $5, $6)
+             is_delivery, shipping_fee, shipping_zone_id, delivery_address,
+             idempotency_key)
+         VALUES ($1, 0, 'aguardando_pagamento', 'website', $2, $3, $4, $5, $6, $7)
          RETURNING id`,
         [
           customerId,
@@ -367,6 +391,7 @@ class PublicService {
           shippingFee,
           shippingZone?.id || null,
           deliverySnapshot,
+          idempotencyKey,
         ]
       );
       const orderId = orderRes.rows[0].id;
@@ -449,7 +474,7 @@ class PublicService {
    * Checkout Stripe: grava pedido (como no fluxo WhatsApp) e abre sessão Stripe.
    * Falha na sessão → reverte stock e apaga o pedido.
    */
-  async createWebsiteOrderStripeCheckout({ customer, items, delivery, success_url, cancel_url }) {
+  async createWebsiteOrderStripeCheckout({ customer, items, delivery, success_url, cancel_url, idempotencyKey = null }) {
     stripeCheckoutService.getStripeOrThrow();
     assertStripeCheckoutRedirects(success_url, cancel_url);
 
@@ -457,6 +482,7 @@ class PublicService {
       customer: { ...(customer || {}), payment_method: 'stripe' },
       items,
       delivery,
+      idempotencyKey,
     });
 
     try {

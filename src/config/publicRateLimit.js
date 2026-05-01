@@ -47,3 +47,21 @@ if (process.env.PUBLIC_API_RATELIMIT_DISABLED === '1') {
     },
   });
 }
+
+// Limitador específico para o endpoint /login (admin) — protege contra
+// brute-force de credenciais. 10 tentativas por janela de 15 min por IP.
+// Independente das flags de rate-limit público.
+module.exports.loginLimiter = rateLimit({
+  windowMs: intEnv('LOGIN_RATELIMIT_WINDOW_MS', 15 * 60 * 1000),
+  limit: intEnv('LOGIN_RATELIMIT_MAX', 10),
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  // Não conta tentativas com sucesso — só penaliza falhas.
+  skipSuccessfulRequests: true,
+  message: { error: 'Demasiadas tentativas de login. Tenta novamente em 15 minutos.' },
+  handler(req, res) {
+    res.status(429).json({
+      error: 'Demasiadas tentativas de login. Tenta novamente em 15 minutos.',
+    });
+  },
+});

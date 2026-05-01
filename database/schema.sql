@@ -101,6 +101,8 @@ CREATE TABLE IF NOT EXISTS orders (
   status VARCHAR(50) DEFAULT 'aguardando_pagamento',
   origin VARCHAR(50),
   stripe_link_id VARCHAR(500),
+  -- Observações livres do cliente no checkout (site)
+  customer_notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
@@ -112,6 +114,18 @@ CREATE INDEX idx_orders_customer_id ON orders(customer_id);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_created_at ON orders(created_at);
 CREATE INDEX idx_orders_stripe_link_id ON orders(stripe_link_id);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'orders'
+      AND column_name = 'customer_notes'
+  ) THEN
+    ALTER TABLE orders ADD COLUMN customer_notes TEXT;
+  END IF;
+END $$;
 
 -- =====================================================
 -- 6. ORDER_ITEMS TABLE

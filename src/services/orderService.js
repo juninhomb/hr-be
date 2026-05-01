@@ -14,13 +14,18 @@ function defaultShippingFeeEur() {
 async function queryOrdersJoinedCustomer(whereSql, params = []) {
   const head = `
       SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
-             o.is_delivery, o.shipping_fee,
+             o.is_delivery, o.shipping_fee, o.customer_notes,
              c.full_name, c.whatsapp_number, c.email,
   `;
   const tail = `
         FROM orders o
         LEFT JOIN customers c ON o.customer_id = c.id
        ${whereSql}`;
+  const headNoCustomerNotes = `
+      SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
+             o.is_delivery, o.shipping_fee, NULL::text AS customer_notes,
+             c.full_name, c.whatsapp_number, c.email,
+  `;
   try {
     const { rows } = await db.query(
       `${head} COALESCE(o.delivery_address, c.address) AS address ${tail}`,
@@ -29,12 +34,43 @@ async function queryOrdersJoinedCustomer(whereSql, params = []) {
     return rows;
   } catch (err) {
     const msg = String(err?.message || '');
+    if (err?.code === '42703' && msg.includes('customer_notes')) {
+      try {
+        const { rows } = await db.query(
+          `${headNoCustomerNotes} COALESCE(o.delivery_address, c.address) AS address ${tail}`,
+          params,
+        );
+        return rows;
+      } catch (err2) {
+        const msg2 = String(err2?.message || '');
+        if (err2?.code === '42703' && msg2.includes('delivery_address')) {
+          const { rows } = await db.query(
+            `${headNoCustomerNotes} c.address AS address ${tail}`,
+            params,
+          );
+          return rows;
+        }
+        throw err2;
+      }
+    }
     if (err?.code === '42703' && msg.includes('delivery_address')) {
-      const { rows } = await db.query(
-        `${head} c.address AS address ${tail}`,
-        params,
-      );
-      return rows;
+      try {
+        const { rows } = await db.query(
+          `${head} c.address AS address ${tail}`,
+          params,
+        );
+        return rows;
+      } catch (err2) {
+        const msg2 = String(err2?.message || '');
+        if (err2?.code === '42703' && msg2.includes('customer_notes')) {
+          const { rows } = await db.query(
+            `${headNoCustomerNotes} c.address AS address ${tail}`,
+            params,
+          );
+          return rows;
+        }
+        throw err2;
+      }
     }
     throw err;
   }

@@ -199,7 +199,7 @@ class PublicService {
    * - Gera pedido com `origin = 'website'` e `status = 'aguardando_pagamento'`,
    *   ficando visível em /pendentes do dashboard admin.
    */
-  async createWebsiteOrder({ customer, items, delivery, idempotencyKey = null }) {
+  async createWebsiteOrder({ customer, items, delivery, notes = null, idempotencyKey = null }) {
     if (!customer?.whatsapp_number) {
       throw publicError(400, 'whatsapp_number é obrigatório.');
     }
@@ -231,6 +231,7 @@ class PublicService {
     }
 
     const cleanWhatsapp = assertValidWhatsappOrThrow(customer.whatsapp_number);
+    const customerNotes = sanitizeCustomerNotes(notes);
 
     const isDelivery = Boolean(delivery?.is_delivery);
 
@@ -377,23 +378,47 @@ class PublicService {
       const bySku = new Map(variantsRes.rows.map((r) => [r.sku, r]));
 
       // 3) Cria order header com total temporário (vai ser actualizado)
-      const orderRes = await client.query(
-        `INSERT INTO orders
-            (customer_id, total_amount, status, origin, payment_method,
-             is_delivery, shipping_fee, shipping_zone_id, delivery_address,
-             idempotency_key)
-         VALUES ($1, 0, 'aguardando_pagamento', 'website', $2, $3, $4, $5, $6, $7)
-         RETURNING id`,
-        [
-          customerId,
-          customer.payment_method || 'a_definir',
-          isDelivery,
-          shippingFee,
-          shippingZone?.id || null,
-          deliverySnapshot,
-          idempotencyKey,
-        ]
-      );
+      const insertOrderBaseParams = [
+        customerId,
+        customer.payment_method || 'a_definir',
+        isDelivery,
+        shippingFee,
+        shippingZone?.id || null,
+        deliverySnapshot,
+        idempotencyKey,
+      ];
+      let orderRes;
+      try {
+        orderRes = await client.query(
+          `INSERT INTO orders
+              (customer_id, total_amount, status, origin, payment_method,
+               is_delivery, shipping_fee, shipping_zone_id, delivery_address,
+               idempotency_key, customer_notes)
+           VALUES ($1, 0, 'aguardando_pagamento', 'website', $2, $3, $4, $5, $6, $7, $8)
+           RETURNING id`,
+          [...insertOrderBaseParams, customerNotes],
+        );
+      } catch (insertErr) {
+        const imsg = String(insertErr?.message || '');
+        if (insertErr?.code === '42703' && imsg.includes('customer_notes')) {
+          // DB sem migração — pedido continua válido; notas não persistem até ALTER TABLE.
+          console.warn(
+            '[createWebsiteOrder] Coluna orders.customer_notes ausente — corre migração '
+            + 'database/migrations/2026-05-01_orders_customer_notes.sql ; notas ignoradas.',
+          );
+          orderRes = await client.query(
+            `INSERT INTO orders
+                (customer_id, total_amount, status, origin, payment_method,
+                 is_delivery, shipping_fee, shipping_zone_id, delivery_address,
+                 idempotency_key)
+             VALUES ($1, 0, 'aguardando_pagamento', 'website', $2, $3, $4, $5, $6, $7)
+             RETURNING id`,
+            insertOrderBaseParams,
+          );
+        } else {
+          throw insertErr;
+        }
+      }
       const orderId = orderRes.rows[0].id;
 
       // 4) Insere line items + deduz stock atómico
@@ -446,6 +471,7 @@ class PublicService {
             is_delivery: isDelivery, shipping_fee: shippingFee,
             shipping_zone_id: shippingZone?.id || null,
             country, postal_code: postalCode,
+            has_customer_notes: Boolean(customerNotes),
           })]
         );
       } catch (e) { /* noop */ }
@@ -474,7 +500,9 @@ class PublicService {
    * Checkout Stripe: grava pedido (como no fluxo WhatsApp) e abre sessão Stripe.
    * Falha na sessão → reverte stock e apaga o pedido.
    */
-  async createWebsiteOrderStripeCheckout({ customer, items, delivery, success_url, cancel_url, idempotencyKey = null }) {
+  async createWebsiteOrderStripeCheckout({
+    customer, items, delivery, notes = null, success_url, cancel_url, idempotencyKey = null,
+  }) {
     stripeCheckoutService.getStripeOrThrow();
     assertStripeCheckoutRedirects(success_url, cancel_url);
 
@@ -482,6 +510,7 @@ class PublicService {
       customer: { ...(customer || {}), payment_method: 'stripe' },
       items,
       delivery,
+      notes,
       idempotencyKey,
     });
 
@@ -580,6 +609,17 @@ function previewSubtotal(items) {
     if (qty > 0 && Number.isFinite(unit) && unit > 0) return sum + unit * qty;
     return sum;
   }, 0);
+}
+
+const MAX_CUSTOMER_NOTES_LEN = 2000;
+
+/** Notas opcionais do checkout — texto curto, sem null bytes. */
+function sanitizeCustomerNotes(raw) {
+  if (raw == null) return null;
+  let s = String(raw).replace(/\0/g, '').trim().replace(/\r\n/g, '\n');
+  if (!s) return null;
+  if (s.length > MAX_CUSTOMER_NOTES_LEN) s = s.slice(0, MAX_CUSTOMER_NOTES_LEN);
+  return s;
 }
 
 function publicError(status, message) {

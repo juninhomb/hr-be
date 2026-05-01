@@ -44,6 +44,8 @@ const STATIC_ALLOWED_ORIGINS = [
   'http://localhost:3005',
   'http://127.0.0.1:3005',
   'http://168.119.230.7:3005',
+  // Testes directos à API pelo IP (Swagger/navegador no servidor)
+  'http://168.119.230.7:3001',
 ];
 
 const ALLOWED_ORIGINS = [...new Set([
@@ -51,12 +53,31 @@ const ALLOWED_ORIGINS = [...new Set([
   ...parseCsvOrigins(process.env.CORS_ALLOWED_ORIGINS),
 ])];
 
+/** Site + subdomínios hrstorept.com em HTTPS (evita falhas se faltar uma entrada na lista estática). */
+function isTrustedHrstoreHttpsOrigin(origin) {
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== 'https:') return false;
+    const h = u.hostname.toLowerCase();
+    return h === 'hrstorept.com' || h.endsWith('.hrstorept.com');
+  } catch {
+    return false;
+  }
+}
+
 const corsOptions = {
   origin(origin, callback) {
     // Permite ferramentas sem Origin (curl, n8n, health checks)
     if (!origin) return callback(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-    return callback(new Error(`CORS bloqueado para origem: ${origin}`));
+    if (isTrustedHrstoreHttpsOrigin(origin)) return callback(null, true);
+    // Nunca callback(Error): o cors repassa a next(err) e o errorHandler responde sem
+    // Access-Control-Allow-Origin — o browser mostra preflight falhado em vez de "negado" claro.
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn(`[CORS] Origem não permitida: ${origin}`);
+    }
+    return callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Public-Token', 'idempotency-key'],

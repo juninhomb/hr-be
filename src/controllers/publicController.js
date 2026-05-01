@@ -48,9 +48,9 @@ class PublicController {
 
   async createOrder(req, res, next) {
     try {
-      const { customer = {}, items = [], delivery = {} } = req.body || {};
+      const { customer = {}, items = [], delivery = {}, notes } = req.body || {};
       const idempotencyKey = sanitizeIdempotencyKey(req.headers['idempotency-key']);
-      const result = await PublicService.createWebsiteOrder({ customer, items, delivery, idempotencyKey });
+      const result = await PublicService.createWebsiteOrder({ customer, items, delivery, notes, idempotencyKey });
       res.status(201).json(result);
     } catch (error) {
       if (error.status) {
@@ -67,6 +67,7 @@ class PublicController {
         customer = {},
         items = [],
         delivery = {},
+        notes,
         success_url: successUrl,
         cancel_url: cancelUrl,
       } = req.body || {};
@@ -74,6 +75,7 @@ class PublicController {
         customer,
         items,
         delivery,
+        notes,
         success_url: successUrl,
         cancel_url: cancelUrl,
         idempotencyKey: sanitizeIdempotencyKey(req.headers['idempotency-key']),

@@ -23,6 +23,7 @@ router.get('/postal-code/:cp', ShippingController.lookupCp);
 
 // Checkout (limite próprio mais apertado, em série com o da montagem em main.js)
 router.post('/customer-hints', strictPublicPostLimiter, PublicController.customerHints);
+router.post('/coupon-quote', strictPublicPostLimiter, PublicController.couponQuote);
 router.post('/orders', strictPublicPostLimiter, PublicController.createOrder);
 router.post('/orders/stripe-checkout', strictPublicPostLimiter, PublicController.createStripeCheckout);
 router.post(

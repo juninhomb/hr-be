@@ -10,6 +10,7 @@ const CustomerController = require('../controllers/customerController');
 const DashboardController = require('../controllers/dashboardController');
 const ShippingController = require('../controllers/shippingController');
 const MailController = require('../controllers/mailController');
+const DiscountCouponController = require('../controllers/discountCouponController');
 
 const authMiddleware = require('../config/authMiddleware');
 const { upload } = require('../config/upload');
@@ -80,6 +81,12 @@ router.get('/shipping-zones', ShippingController.listAdmin);
 router.post('/shipping-zones', ShippingController.createAdmin);
 router.put('/shipping-zones/:id', ShippingController.updateAdmin);
 router.delete('/shipping-zones/:id', ShippingController.destroyAdmin);
+
+// Cupões de desconto (checkout site)
+router.get('/discount-coupons', DiscountCouponController.list);
+router.post('/discount-coupons', DiscountCouponController.store);
+router.put('/discount-coupons/:id', DiscountCouponController.update);
+router.delete('/discount-coupons/:id', DiscountCouponController.destroy);
 
 // Clientes (backoffice) — rotas mais específicas primeiro
 router.get('/customers', CustomerController.list);

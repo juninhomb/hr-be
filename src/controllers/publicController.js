@@ -48,10 +48,27 @@ class PublicController {
 
   async createOrder(req, res, next) {
     try {
-      const { customer = {}, items = [], delivery = {}, notes } = req.body || {};
+      const {
+        customer = {}, items = [], delivery = {}, notes, coupon_code: couponCode,
+      } = req.body || {};
       const idempotencyKey = sanitizeIdempotencyKey(req.headers['idempotency-key']);
-      const result = await PublicService.createWebsiteOrder({ customer, items, delivery, notes, idempotencyKey });
+      const result = await PublicService.createWebsiteOrder({
+        customer, items, delivery, notes, idempotencyKey, coupon_code: couponCode,
+      });
       res.status(201).json(result);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  async couponQuote(req, res, next) {
+    try {
+      const { code, items } = req.body || {};
+      const data = await PublicService.couponQuote({ code, items });
+      res.json(data);
     } catch (error) {
       if (error.status) {
         return res.status(error.status).json({ error: error.message });
@@ -91,6 +108,7 @@ class PublicController {
         notes,
         success_url: successUrl,
         cancel_url: cancelUrl,
+        coupon_code: couponCode,
       } = req.body || {};
       const data = await PublicService.createWebsiteOrderStripeCheckout({
         customer,
@@ -100,6 +118,7 @@ class PublicController {
         success_url: successUrl,
         cancel_url: cancelUrl,
         idempotencyKey: sanitizeIdempotencyKey(req.headers['idempotency-key']),
+        coupon_code: couponCode,
       });
       res.status(201).json(data);
     } catch (error) {

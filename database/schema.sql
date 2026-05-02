@@ -129,6 +129,26 @@ BEGIN
   END IF;
 END $$;
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'orders'
+      AND column_name = 'coupon_code'
+  ) THEN
+    ALTER TABLE orders ADD COLUMN coupon_code VARCHAR(64);
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'orders'
+      AND column_name = 'discount_amount'
+  ) THEN
+    ALTER TABLE orders ADD COLUMN discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0;
+  END IF;
+END $$;
+
 -- =====================================================
 -- 6. ORDER_ITEMS TABLE
 -- =====================================================
@@ -167,6 +187,28 @@ CREATE INDEX idx_audit_logs_admin_user ON audit_logs(admin_user);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 CREATE INDEX idx_audit_logs_details ON audit_logs USING GIN(details);
+
+-- =====================================================
+-- 8. DISCOUNT_COUPONS (checkout site — gerido no admin)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS discount_coupons (
+  id SERIAL PRIMARY KEY,
+  code VARCHAR(48) NOT NULL,
+  kind VARCHAR(16) NOT NULL CHECK (kind IN ('percent', 'fixed')),
+  value NUMERIC(12, 2) NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT discount_coupons_value_ok CHECK (
+    (kind = 'percent' AND value > 0 AND value <= 100)
+    OR (kind = 'fixed' AND value > 0)
+  ),
+  CONSTRAINT discount_coupons_code_unique UNIQUE (code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_discount_coupons_active
+  ON discount_coupons (is_active)
+  WHERE is_active = true;
 
 
 

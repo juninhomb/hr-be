@@ -3,6 +3,7 @@ const ShippingService = require('./shippingService');
 const stripeCheckoutService = require('./stripeCheckoutService');
 const { assertValidWhatsappOrThrow, canonicalWhatsappNumber } = require('../utils/whatsappNormalize');
 const { upsertCustomerAddress } = require('./customerAddressService');
+const { resolveCoupon } = require('../utils/discountCoupons');
 
 /**
  * Serviços de leitura/escrita públicos para o site de vendas (hrstore-site).
@@ -230,6 +231,51 @@ class PublicService {
     };
   }
 
+  /**
+   * Pré-visualização de cupão (mesmos preços que no checkout; só leitura).
+   * POST `/api/public/coupon-quote`
+   */
+  async couponQuote({ code, items }) {
+    if (!String(code || '').trim()) {
+      throw publicError(400, 'Indica o código do cupão.');
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      throw publicError(400, 'O carrinho está vazio.');
+    }
+    const skus = items.map((i) => String(i.sku).trim()).filter(Boolean);
+    if (!skus.length) throw publicError(400, 'Itens inválidos.');
+
+    let variantsRes;
+    try {
+      variantsRes = await db.query(buildCheckoutVariantsSql(true), [skus]);
+    } catch (vqErr) {
+      if (!isMissingIsActiveColumn(vqErr)) throw vqErr;
+      variantsRes = await db.query(buildCheckoutVariantsSql(false), [skus]);
+    }
+    const bySku = new Map(variantsRes.rows.map((r) => [r.sku, r]));
+
+    let itemsSubtotal = 0;
+    for (const it of items) {
+      const sku = String(it.sku).trim();
+      const qty = parseInt(it.quantity, 10);
+      if (!sku || !qty || qty <= 0) throw publicError(400, 'Itens inválidos.');
+      const variant = bySku.get(sku);
+      if (!variant) throw publicError(400, `SKU inválido: ${sku}.`);
+      itemsSubtotal += Number(variant.base_price) * qty;
+    }
+
+    const resolved = await resolveCoupon(db, code, itemsSubtotal);
+    if (!resolved) {
+      throw publicError(400, 'Cupão inválido ou indisponível.');
+    }
+    return {
+      ok: true,
+      items_subtotal: Math.round(itemsSubtotal * 100) / 100,
+      discount_amount: resolved.discountAmount,
+      coupon_code: resolved.code,
+    };
+  }
+
   async listCategories() {
     const exec = async (useVa) => {
       const v0Tail = useVa ? ' AND COALESCE(v0.is_active, true)' : '';
@@ -282,7 +328,9 @@ class PublicService {
    * - Gera pedido com `origin = 'website'` e `status = 'aguardando_pagamento'`,
    *   ficando visível em /pendentes do dashboard admin.
    */
-  async createWebsiteOrder({ customer, items, delivery, notes = null, idempotencyKey = null }) {
+  async createWebsiteOrder({
+    customer, items, delivery, notes = null, idempotencyKey = null, coupon_code: rawCoupon = null,
+  }) {
     if (!customer?.whatsapp_number) {
       throw publicError(400, 'whatsapp_number é obrigatório.');
     }
@@ -294,17 +342,23 @@ class PublicService {
     // de criar duplicado. Defesa contra retries do navegador.
     if (idempotencyKey) {
       const existing = await db.query(
-        `SELECT id, customer_id, total_amount, shipping_fee, shipping_zone_id, status
+        `SELECT id, customer_id, total_amount, shipping_fee, shipping_zone_id, status,
+                COALESCE(discount_amount, 0) AS discount_amount, coupon_code
            FROM orders WHERE idempotency_key = $1`,
         [idempotencyKey]
       );
       if (existing.rows[0]) {
         const o = existing.rows[0];
+        const ship = Number(o.shipping_fee || 0);
+        const disc = Number(o.discount_amount || 0);
+        const itemsGross = Number(o.total_amount) - ship + disc;
         return {
           order_id: o.id,
           customer_id: o.customer_id,
-          items_total: Number(o.total_amount) - Number(o.shipping_fee || 0),
-          shipping_fee: Number(o.shipping_fee || 0),
+          items_total: Math.round(itemsGross * 100) / 100,
+          discount_amount: Math.round(disc * 100) / 100,
+          coupon_code: o.coupon_code || null,
+          shipping_fee: ship,
           shipping_zone: null,
           total_amount: Number(o.total_amount),
           status: o.status,
@@ -541,11 +595,48 @@ class PublicService {
         itemsTotal += unitPrice * qty;
       }
 
-      const finalTotal = itemsTotal + shippingFee;
-      await client.query(
-        `UPDATE orders SET total_amount = $1 WHERE id = $2`,
-        [finalTotal, orderId]
-      );
+      let discountAmount = 0;
+      let couponStored = null;
+      const couponTrim = String(rawCoupon ?? '').trim();
+      if (couponTrim) {
+        const resolved = await resolveCoupon(client, couponTrim, itemsTotal);
+        if (!resolved) {
+          throw publicError(400, 'Cupão inválido ou indisponível.');
+        }
+        discountAmount = resolved.discountAmount;
+        couponStored = resolved.code;
+      }
+
+      const itemsNet = Math.round((itemsTotal - discountAmount) * 100) / 100;
+      if (itemsNet < 0.01) {
+        throw publicError(400, 'O desconto não pode anular o valor dos artigos.');
+      }
+      const finalTotal = Math.round((itemsNet + shippingFee) * 100) / 100;
+
+      try {
+        await client.query(
+          `UPDATE orders
+              SET total_amount = $1,
+                  coupon_code = $2,
+                  discount_amount = $3
+            WHERE id = $4`,
+          [finalTotal, couponStored, discountAmount, orderId],
+        );
+      } catch (updErr) {
+        const msg = String(updErr?.message || '');
+        if (updErr?.code === '42703' && /coupon_code|discount_amount/i.test(msg)) {
+          if (discountAmount > 0) {
+            throw publicError(
+              500,
+              'Cupões não estão activos na base de dados. Corre a migração '
+              + '`database/migrations/2026-05-02_orders_discount_coupon.sql`.',
+            );
+          }
+          await client.query(`UPDATE orders SET total_amount = $1 WHERE id = $2`, [finalTotal, orderId]);
+        } else {
+          throw updErr;
+        }
+      }
 
       await client.query('COMMIT');
 
@@ -559,6 +650,8 @@ class PublicService {
             shipping_zone_id: shippingZone?.id || null,
             country, postal_code: postalCode,
             has_customer_notes: Boolean(customerNotes),
+            coupon_code: couponStored,
+            discount_amount: discountAmount,
           })]
         );
       } catch (e) { /* noop */ }
@@ -568,6 +661,8 @@ class PublicService {
         order_id: orderId,
         customer_id: customerId,
         items_total: itemsTotal,
+        discount_amount: discountAmount,
+        coupon_code: couponStored,
         shipping_fee: shippingFee,
         shipping_zone: shippingZone
           ? { id: shippingZone.id, label: shippingZone.label, region: shippingZone.region }
@@ -588,7 +683,14 @@ class PublicService {
    * Falha na sessão → reverte stock e apaga o pedido.
    */
   async createWebsiteOrderStripeCheckout({
-    customer, items, delivery, notes = null, success_url, cancel_url, idempotencyKey = null,
+    customer,
+    items,
+    delivery,
+    notes = null,
+    success_url,
+    cancel_url,
+    idempotencyKey = null,
+    coupon_code = null,
   }) {
     stripeCheckoutService.getStripeOrThrow();
     assertStripeCheckoutRedirects(success_url, cancel_url);
@@ -599,6 +701,7 @@ class PublicService {
       delivery,
       notes,
       idempotencyKey,
+      coupon_code,
     });
 
     try {
@@ -617,6 +720,8 @@ class PublicService {
         order_id: orderPayload.order_id,
         customer_id: orderPayload.customer_id,
         items_total: orderPayload.items_total,
+        discount_amount: orderPayload.discount_amount,
+        coupon_code: orderPayload.coupon_code,
         shipping_fee: orderPayload.shipping_fee,
         shipping_zone: orderPayload.shipping_zone,
         total_amount: orderPayload.total_amount,

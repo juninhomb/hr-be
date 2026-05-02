@@ -81,16 +81,39 @@ async function cleanupFailedCheckoutOrder(orderId) {
 async function createSessionForOrder({ orderId, customerEmail, successUrl, cancelUrl }) {
   const stripe = getStripeOrThrow();
 
-  const { rows: orderRows } = await db.query(
-    `SELECT shipping_fee, is_delivery FROM orders WHERE id = $1`,
-    [orderId],
-  );
+  let orderRows;
+  try {
+    ({ rows: orderRows } = await db.query(
+      `SELECT shipping_fee, is_delivery,
+              COALESCE(discount_amount, 0) AS discount_amount,
+              coupon_code
+         FROM orders WHERE id = $1`,
+      [orderId],
+    ));
+  } catch (e) {
+    const msg = String(e?.message || '');
+    if (e?.code === '42703' && /discount_amount|coupon_code/i.test(msg)) {
+      ({ rows: orderRows } = await db.query(
+        `SELECT shipping_fee, is_delivery FROM orders WHERE id = $1`,
+        [orderId],
+      ));
+      if (orderRows[0]) {
+        orderRows = [{ ...orderRows[0], discount_amount: 0, coupon_code: null }];
+      }
+    } else {
+      throw e;
+    }
+  }
   if (!orderRows[0]) {
     const err = new Error('Pedido não encontrado.');
     err.status = 404;
     throw err;
   }
   const shippingFee = Number(orderRows[0].shipping_fee || 0);
+  const discountAmount = Number(orderRows[0].discount_amount || 0);
+  const orderCouponCode = orderRows[0].coupon_code
+    ? String(orderRows[0].coupon_code).trim()
+    : '';
 
   const { rows: lines } = await db.query(
     `
@@ -104,23 +127,51 @@ async function createSessionForOrder({ orderId, customerEmail, successUrl, cance
     [orderId],
   );
 
+  const itemsSum = lines.reduce(
+    (s, row) => s + Number(row.unit_price) * Number(row.quantity),
+    0,
+  );
+
   /** @type {import('stripe').Stripe.Checkout.SessionCreateParams.LineItem[]} */
-  const line_items = lines.map((row) => {
-    const unit = Number(row.unit_price);
-    const cents = Math.round(unit * 100);
-    const label = String(row.product_name || row.sku).slice(0, 120);
-    return {
-      quantity: row.quantity,
-      price_data: {
-        currency: 'eur',
-        unit_amount: cents,
-        product_data: {
-          name: `${label} (${row.sku})`,
-          metadata: { sku: row.sku },
+  let line_items;
+  if (discountAmount >= 0.005) {
+    const netCents = Math.round((itemsSum - discountAmount) * 100);
+    if (netCents < 1) {
+      const err = new Error('Total após desconto inválido para Stripe.');
+      err.status = 500;
+      throw err;
+    }
+    const coupLabel = orderCouponCode ? ` (cupão ${orderCouponCode})` : '';
+    line_items = [
+      {
+        quantity: 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: netCents,
+          product_data: {
+            name: `Artigos da encomenda #${orderId}${coupLabel}`.slice(0, 120),
+          },
         },
       },
-    };
-  });
+    ];
+  } else {
+    line_items = lines.map((row) => {
+      const unit = Number(row.unit_price);
+      const cents = Math.round(unit * 100);
+      const label = String(row.product_name || row.sku).slice(0, 120);
+      return {
+        quantity: row.quantity,
+        price_data: {
+          currency: 'eur',
+          unit_amount: cents,
+          product_data: {
+            name: `${label} (${row.sku})`,
+            metadata: { sku: row.sku },
+          },
+        },
+      };
+    });
+  }
 
   if (shippingFee > 0.009) {
     line_items.push({

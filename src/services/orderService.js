@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const LogService = require('./logService');
+const emailService = require('./emailService');
 
 /** Frete por defeito (€) em criação manual com entrega. `.env`: DEFAULT_SHIPPING_FEE_EUR */
 function defaultShippingFeeEur() {
@@ -14,7 +15,7 @@ function defaultShippingFeeEur() {
 async function queryOrdersJoinedCustomer(whereSql, params = []) {
   const head = `
       SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
-             o.is_delivery, o.shipping_fee, o.customer_notes,
+             o.is_delivery, o.shipping_fee, o.customer_notes, o.pickup_ready_notified_at, o.pickup_collected_at,
              c.full_name, c.whatsapp_number, c.email,
   `;
   const tail = `
@@ -23,7 +24,7 @@ async function queryOrdersJoinedCustomer(whereSql, params = []) {
        ${whereSql}`;
   const headNoCustomerNotes = `
       SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
-             o.is_delivery, o.shipping_fee, NULL::text AS customer_notes,
+             o.is_delivery, o.shipping_fee, NULL::text AS customer_notes, o.pickup_ready_notified_at, o.pickup_collected_at,
              c.full_name, c.whatsapp_number, c.email,
   `;
   try {
@@ -359,6 +360,7 @@ class OrderService {
 
       await client.query('COMMIT');
       await LogService.register('system', 'payment_confirmed', { orderId, override: isOverride, shipping_fee: finalShippingFee });
+      emailService.scheduleNotifyOrderPaymentConfirmed(orderId);
       return { success: true, orderId };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -487,6 +489,144 @@ class OrderService {
     if (!rows[0]) throw new Error('Apenas pedidos pagos podem ser enviados.');
     await LogService.register('system', 'order_shipped_ctt', { orderId, trackingCode });
     return { success: true, orderId, trackingCode };
+  }
+
+  // -------------------------------------------------------------
+  // Liberar pedido para levantamento na loja (site + sem entrega)
+  // -------------------------------------------------------------
+  async notifyPickupReadyForWebsiteStore(orderId, adminUser = 'admin') {
+    const id = parseInt(orderId, 10);
+    if (!Number.isFinite(id)) throw new Error('ID inválido.');
+
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      const { rows } = await client.query(
+        `
+        SELECT id, status,
+               COALESCE(origin, '') AS origin_raw,
+               COALESCE(is_delivery, false) AS is_delivery,
+               pickup_ready_notified_at
+          FROM orders
+         WHERE id = $1
+         FOR UPDATE`,
+        [id],
+      );
+      if (!rows[0]) {
+        await client.query('ROLLBACK');
+        throw new Error('Pedido não encontrado.');
+      }
+      const row = rows[0];
+      if (String(row.origin_raw || '').trim().toLowerCase() !== 'website') {
+        await client.query('ROLLBACK');
+        throw new Error('Apenas pedidos criados no site podem ser liberados neste fluxo.');
+      }
+      if (row.is_delivery) {
+        await client.query('ROLLBACK');
+        throw new Error('Este pedido tem entrega ao domicílio — não se aplica levantamento na loja.');
+      }
+      if (row.status !== 'pago') {
+        await client.query('ROLLBACK');
+        throw new Error('Este pedido ainda não está como pago. Confirma o pagamento antes de libertar para levantamento.');
+      }
+      if (row.pickup_ready_notified_at != null) {
+        await client.query('ROLLBACK');
+        throw new Error('Já foi enviado o email de disponibilidade para levantamento para este pedido.');
+      }
+
+      await client.query(
+        `UPDATE orders SET pickup_ready_notified_at = NOW() WHERE id = $1`,
+        [id],
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    try {
+      await emailService.notifyOrderPickupReadyById(id);
+    } catch (err) {
+      await db.query('UPDATE orders SET pickup_ready_notified_at = NULL WHERE id = $1', [id]).catch(() => {});
+      throw new Error(
+        `Envio por email falhou (${err.message || String(err)}). Podes repetir o envio.`,
+      );
+    }
+
+    await LogService.register(adminUser || 'system', 'pickup_ready_emailed', { orderId: id });
+    const { rows: tout } = await db.query(
+      `SELECT pickup_ready_notified_at FROM orders WHERE id = $1`,
+      [id],
+    );
+    return { success: true, orderId: id, pickup_ready_notified_at: tout[0]?.pickup_ready_notified_at ?? null };
+  }
+
+  // -------------------------------------------------------------
+  // Cliente levantou na loja — encerra o fluxo (status → entregue)
+  // -------------------------------------------------------------
+  async markPickupCollectedForWebsiteStore(orderId, adminUser = 'admin') {
+    const id = parseInt(orderId, 10);
+    if (!Number.isFinite(id)) throw new Error('ID inválido.');
+
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      const { rows } = await client.query(
+        `
+        SELECT id, status,
+               COALESCE(origin, '') AS origin_raw,
+               COALESCE(is_delivery, false) AS is_delivery
+          FROM orders
+         WHERE id = $1
+         FOR UPDATE`,
+        [id],
+      );
+      if (!rows[0]) {
+        await client.query('ROLLBACK');
+        throw new Error('Pedido não encontrado.');
+      }
+      const row = rows[0];
+      if (String(row.origin_raw || '').trim().toLowerCase() !== 'website') {
+        await client.query('ROLLBACK');
+        throw new Error('Apenas pedidos do site neste fluxo de levantamento na loja.');
+      }
+      if (row.is_delivery) {
+        await client.query('ROLLBACK');
+        throw new Error('Este pedido tem envio ao domicílio — usa o fluxo de envio/embalagem.');
+      }
+      if (row.status !== 'pago') {
+        await client.query('ROLLBACK');
+        if (row.status === 'entregue') {
+          throw new Error('Este pedido já está marcado como concluído (levantado / entregue).');
+        }
+        throw new Error('Só é possível confirmar levantamento quando o pedido está pago.');
+      }
+
+      const { rows: out } = await client.query(
+        `
+        UPDATE orders
+           SET status = 'entregue',
+               pickup_collected_at = NOW()
+         WHERE id = $1
+         RETURNING pickup_collected_at`,
+        [id],
+      );
+      await client.query('COMMIT');
+      await LogService.register(adminUser || 'system', 'pickup_collected', { orderId: id });
+      return {
+        success: true,
+        orderId: id,
+        status: 'entregue',
+        pickup_collected_at: out[0]?.pickup_collected_at ?? null,
+      };
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   // -------------------------------------------------------------

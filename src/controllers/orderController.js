@@ -69,6 +69,38 @@ class OrderController {
     }
   }
 
+  /** Envia email ao cliente: pedido pronto para levantar na loja (site + recolha). */
+  async notifyPickupReady(req, res, next) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+      const adminLabel = typeof req.userId === 'string' ? req.userId : String(req.userId ?? 'admin');
+      const result = await OrderService.notifyPickupReadyForWebsiteStore(id, adminLabel);
+      res.json(result);
+    } catch (error) {
+      if (error?.message) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  /** Pedido levantado pelo cliente na loja (site + recolha) → status entregue. */
+  async markPickupCollected(req, res, next) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+      const adminLabel = typeof req.userId === 'string' ? req.userId : String(req.userId ?? 'admin');
+      const result = await OrderService.markPickupCollectedForWebsiteStore(id, adminLabel);
+      res.json(result);
+    } catch (error) {
+      if (error?.message) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
   async updateShippingFee(req, res, next) {
     try {
       const id = parseInt(req.params.id, 10);

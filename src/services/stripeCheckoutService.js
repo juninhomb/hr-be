@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const db = require('../config/db');
+const emailService = require('./emailService');
 
 /**
  * Stripe Checkout PT (EUR): apenas cartão por defeito; Klarna só com STRIPE_ENABLE_KLARNA=1.
@@ -202,6 +203,7 @@ async function applyCheckoutSessionCompleted(session, options = {}) {
   );
 
   if (res.rowCount > 0) {
+    emailService.scheduleNotifyOrderPaymentConfirmed(orderId);
     return { updated: true, order_id: orderId, path: 'stripe_link_match' };
   }
 
@@ -269,6 +271,7 @@ async function applyCheckoutSessionCompleted(session, options = {}) {
       order_id: orderId,
       session_id: sessionId,
     });
+    emailService.scheduleNotifyOrderPaymentConfirmed(orderId);
   }
 
   return {

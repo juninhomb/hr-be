@@ -9,6 +9,7 @@ const CategoryController = require('../controllers/categoryController');
 const CustomerController = require('../controllers/customerController');
 const DashboardController = require('../controllers/dashboardController');
 const ShippingController = require('../controllers/shippingController');
+const MailController = require('../controllers/mailController');
 
 const authMiddleware = require('../config/authMiddleware');
 const { upload } = require('../config/upload');
@@ -27,6 +28,7 @@ router.get('/dashboard/stats', DashboardController.getStats);
 router.get('/pending', OrderController.listPending);
 router.get('/history', OrderController.listHistory);
 router.post('/confirm', OrderController.confirm);
+router.post('/mail/test', MailController.test);
 router.post('/create', OrderController.create);
 
 // Inventário (Produtos)
@@ -90,6 +92,8 @@ router.delete('/customers/:whatsapp', CustomerController.destroy);
 // para não capturar /products, /customers, /pending, etc.
 router.get('/:id', OrderController.show);
 router.post('/:id/cancel', OrderController.cancel);
+router.post('/:id/pickup-ready', OrderController.notifyPickupReady);
+router.post('/:id/pickup-collected', OrderController.markPickupCollected);
 router.post('/:id/ship', OrderController.ship);
 router.patch('/:id/shipping-fee', OrderController.updateShippingFee);
 router.delete('/:id', OrderController.destroy);

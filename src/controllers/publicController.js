@@ -60,6 +60,27 @@ class PublicController {
     }
   }
 
+  /** Confirma sessão Stripe já paga e marca pedido `pago` (backup ao webhook). */
+  async verifyStripeCheckoutSession(req, res, next) {
+    try {
+      const raw = req.body?.session_id;
+      if (!raw || typeof raw !== 'string') {
+        return res.status(400).json({ error: 'session_id é obrigatório.' });
+      }
+      const sessionId = raw.trim();
+      if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
+        return res.status(400).json({ error: 'session_id inválido.' });
+      }
+      const result = await PublicService.verifyStripeCheckoutSession(sessionId);
+      res.json(result);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
   /** Checkout Stripe: cria pedido + sessão Stripe Checkout (redirect). */
   async createStripeCheckout(req, res, next) {
     try {

@@ -25,5 +25,10 @@ router.get('/postal-code/:cp', ShippingController.lookupCp);
 router.post('/customer-hints', strictPublicPostLimiter, PublicController.customerHints);
 router.post('/orders', strictPublicPostLimiter, PublicController.createOrder);
 router.post('/orders/stripe-checkout', strictPublicPostLimiter, PublicController.createStripeCheckout);
+router.post(
+  '/orders/stripe-session-verify',
+  strictPublicPostLimiter,
+  PublicController.verifyStripeCheckoutSession,
+);
 
 module.exports = router;

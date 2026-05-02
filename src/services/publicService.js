@@ -631,6 +631,15 @@ class PublicService {
       throw wrap;
     }
   }
+
+  /**
+   * Confirma pagamento via API Stripe (backup ao webhook).
+   * Chamado em /checkout/sucesso com `session_id` devolvido pelo redirect.
+   */
+  async verifyStripeCheckoutSession(sessionId) {
+    stripeCheckoutService.getStripeOrThrow();
+    return stripeCheckoutService.verifyCheckoutSessionAndMarkPaid(sessionId);
+  }
 }
 
 // -------------------------------------------------------------

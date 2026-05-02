@@ -155,29 +155,146 @@ async function createSessionForOrder({ orderId, customerEmail, successUrl, cance
 }
 
 /**
- * Actualiza estado do pedido a partir do objecto `checkout.session` do webhook
- * (`checkout.session.completed`) — não voltamos a chamar a API Stripe.
+ * Actualiza estado do pedido a partir do objecto `checkout.session` nos webhooks
+ * (`checkout.session.completed`, `checkout.session.async_payment_succeeded`).
+ * Não voltamos a chamar a API Stripe.
+ *
+ * @param {object} session
+ * @param {{ trustPaymentComplete?: boolean }} [options]
+ *   `trustPaymentComplete` — para `async_payment_succeeded`, onde o evento já implica sucesso.
  */
-async function applyCheckoutSessionCompleted(session) {
-  if (!session?.id || session.payment_status !== 'paid') {
-    return { updated: false, reason: 'not_paid' };
+async function applyCheckoutSessionCompleted(session, options = {}) {
+  const trustPaymentComplete = Boolean(options.trustPaymentComplete);
+  if (!session?.id) {
+    return { updated: false, reason: 'no_session_id' };
   }
+
+  const ps = session.payment_status;
+  const paymentOk =
+    trustPaymentComplete ||
+    ps === 'paid' ||
+    ps === 'no_payment_required';
+
+  if (!paymentOk) {
+    return {
+      updated: false,
+      reason: 'not_paid',
+      payment_status: ps,
+    };
+  }
+
   const orderId =
     parseInt(session.metadata?.order_id || session.client_reference_id || '', 10) || null;
   if (!orderId) return { updated: false, reason: 'no_order_id' };
 
-  const res = await db.query(
+  const sessionId = String(session.id).trim();
+
+  let res = await db.query(
     `
     UPDATE orders
        SET status = 'pago'
      WHERE id = $1
-       AND COALESCE(stripe_link_id, '') = $2
+       AND TRIM(COALESCE(stripe_link_id, '')) = $2
        AND status = 'aguardando_pagamento'
      RETURNING id
     `,
-    [orderId, session.id],
+    [orderId, sessionId],
   );
-  return { updated: res.rowCount > 0, order_id: orderId };
+
+  if (res.rowCount > 0) {
+    return { updated: true, order_id: orderId, path: 'stripe_link_match' };
+  }
+
+  // Fallback: metadata/client_reference já ligam o pagamento ao pedido (assinatura Stripe validada).
+  // Ex.: dessincronização de stripe_link_id, sessão antiga paga, ou race improvável na gravação do id.
+  const { rows: pending } = await db.query(
+    `
+    SELECT total_amount
+      FROM orders
+     WHERE id = $1
+       AND status = 'aguardando_pagamento'
+       AND LOWER(TRIM(COALESCE(payment_method, ''))) = 'stripe'
+    `,
+    [orderId],
+  );
+  if (!pending[0]) {
+    console.warn('[stripe webhook] marcar pago: sem pedido stripe pendente', {
+      order_id: orderId,
+      session_id: sessionId,
+    });
+    return { updated: false, reason: 'no_pending_stripe_order', order_id: orderId };
+  }
+
+  const expectedCents = Math.round(Number(pending[0].total_amount) * 100);
+  const sessionCents =
+    session.amount_total != null && session.amount_total !== ''
+      ? Number(session.amount_total)
+      : null;
+
+  const centsDelta =
+    sessionCents != null && Number.isFinite(sessionCents)
+      ? Math.abs(sessionCents - expectedCents)
+      : 0;
+  // Stripe e PostgreSQL podem diferir 1 cêntimo em arredondamentos de linhas.
+  if (sessionCents != null && Number.isFinite(sessionCents) && centsDelta > 2) {
+    console.error('[stripe webhook] marcar pago: valor não coincide com pedido (fallback abortado)', {
+      order_id: orderId,
+      session_id: sessionId,
+      expectedCents,
+      sessionCents,
+    });
+    return {
+      updated: false,
+      reason: 'amount_mismatch',
+      order_id: orderId,
+      expectedCents,
+      sessionCents,
+    };
+  }
+
+  res = await db.query(
+    `
+    UPDATE orders
+       SET status = 'pago'
+     WHERE id = $1
+       AND status = 'aguardando_pagamento'
+       AND LOWER(TRIM(COALESCE(payment_method, ''))) = 'stripe'
+     RETURNING id
+    `,
+    [orderId],
+  );
+
+  if (res.rowCount > 0) {
+    console.warn('[stripe webhook] pedido marcado pago via fallback (sem match de stripe_link_id)', {
+      order_id: orderId,
+      session_id: sessionId,
+    });
+  }
+
+  return {
+    updated: res.rowCount > 0,
+    order_id: orderId,
+    path: res.rowCount > 0 ? 'metadata_amount_fallback' : 'fallback_no_row',
+  };
+}
+
+/**
+ * Backup ao webhook: página de sucesso pede à API para ir buscar a sessão à Stripe
+ * e aplicar a mesma lógica de marcar pago (útil se o webhook falhar ou URL errada).
+ */
+async function verifyCheckoutSessionAndMarkPaid(sessionId) {
+  const stripe = getStripeOrThrow();
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(String(sessionId).trim());
+  } catch (e) {
+    const err = new Error(
+      e?.message ? `Stripe: ${e.message}` : 'Sessão Stripe não encontrada.',
+    );
+    err.status = 502;
+    throw err;
+  }
+  return applyCheckoutSessionCompleted(session);
 }
 
 module.exports = {
@@ -186,4 +303,5 @@ module.exports = {
   createSessionForOrder,
   cleanupFailedCheckoutOrder,
   applyCheckoutSessionCompleted,
+  verifyCheckoutSessionAndMarkPaid,
 };

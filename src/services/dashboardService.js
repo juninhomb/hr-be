@@ -5,7 +5,10 @@ class DashboardService {
     // Estatísticas agregadas (cards principais)
     const aggregate = `
       SELECT
-        (SELECT COUNT(*)::int FROM orders WHERE created_at >= CURRENT_DATE) AS sales_today,
+        (SELECT COUNT(*)::int FROM orders
+          WHERE created_at >= CURRENT_DATE
+            AND status IN ('pago','enviado','entregue')) AS orders_paid_today,
+        (SELECT COUNT(*)::int FROM orders WHERE created_at >= CURRENT_DATE) AS orders_placed_today,
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders
           WHERE status = 'pago' AND created_at >= CURRENT_DATE) AS revenue_today,
@@ -17,7 +20,8 @@ class DashboardService {
            FROM orders
           WHERE status IN ('pago','enviado','entregue')
             AND created_at >= CURRENT_DATE - INTERVAL '30 days') AS revenue_30d,
-        (SELECT COUNT(*)::int FROM product_variants WHERE stock_quantity <= 1 AND stock_quantity > 0) AS low_stock_count,
+        (SELECT COUNT(*)::int FROM product_variants
+          WHERE stock_quantity BETWEEN 1 AND 5) AS low_stock_count,
         (SELECT COUNT(*)::int FROM product_variants WHERE stock_quantity = 0) AS out_of_stock_count,
         (SELECT COUNT(*)::int FROM customers) AS total_customers,
         (SELECT COUNT(*)::int FROM orders WHERE status = 'aguardando_pagamento') AS pending_count,
@@ -28,7 +32,13 @@ class DashboardService {
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders WHERE status = 'aguardando_pagamento') AS pending_value,
         (SELECT COALESCE(SUM(stock_quantity), 0)::int FROM product_variants) AS total_stock,
-        (SELECT COUNT(*)::int FROM products) AS total_products
+        (SELECT COUNT(*)::int FROM products) AS total_products,
+        (SELECT COUNT(*)::int FROM product_variants) AS total_variants,
+        (SELECT COALESCE(SUM(v.stock_quantity * p.base_price), 0)::float
+           FROM product_variants v
+           INNER JOIN products p ON p.id = v.product_id) AS stock_value_eur,
+        (SELECT COUNT(*)::int FROM products WHERE is_featured = true) AS featured_products_count,
+        (SELECT COUNT(*)::int FROM product_variants WHERE is_active = false) AS hidden_variants_count
     `;
 
     // Receita diária últimos 14 dias
@@ -80,14 +90,14 @@ class DashboardService {
       ORDER BY revenue DESC
     `;
 
-    // Stock crítico (esgotadas + baixo) — top 6
+    // Stock crítico (esgotado + baixo 1–5, alinhado ao filtro do inventário) — top 8
     const lowStock = `
       SELECT v.sku, v.color, v.size, v.stock_quantity, p.name
       FROM product_variants v
       LEFT JOIN products p ON p.id = v.product_id
-      WHERE v.stock_quantity <= 1
+      WHERE v.stock_quantity <= 5
       ORDER BY v.stock_quantity ASC, p.name ASC
-      LIMIT 6
+      LIMIT 8
     `;
 
     // Pedidos pendentes recentes (top 5)

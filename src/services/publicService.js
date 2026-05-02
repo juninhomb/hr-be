@@ -405,14 +405,15 @@ class PublicService {
              postal_code, city, district, country, phone)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT (whatsapp_number)
-         DO UPDATE SET full_name   = COALESCE(EXCLUDED.full_name, customers.full_name),
-                       email       = COALESCE(EXCLUDED.email,     customers.email),
-                       address     = COALESCE(EXCLUDED.address,   customers.address),
-                       postal_code = COALESCE(EXCLUDED.postal_code, customers.postal_code),
-                       city        = COALESCE(EXCLUDED.city,        customers.city),
-                       district    = COALESCE(EXCLUDED.district,    customers.district),
-                       country     = COALESCE(EXCLUDED.country,     customers.country),
-                       phone       = COALESCE(EXCLUDED.phone,       customers.phone)
+         DO UPDATE SET
+           full_name   = COALESCE(NULLIF(TRIM(EXCLUDED.full_name), ''),   customers.full_name),
+           email       = COALESCE(NULLIF(TRIM(EXCLUDED.email), ''),       customers.email),
+           address     = COALESCE(NULLIF(TRIM(EXCLUDED.address), ''),     customers.address),
+           postal_code = COALESCE(NULLIF(TRIM(EXCLUDED.postal_code), ''), customers.postal_code),
+           city        = COALESCE(NULLIF(TRIM(EXCLUDED.city), ''),         customers.city),
+           district    = COALESCE(NULLIF(TRIM(EXCLUDED.district), ''),     customers.district),
+           country     = COALESCE(NULLIF(TRIM(EXCLUDED.country), ''),     customers.country),
+           phone       = COALESCE(NULLIF(TRIM(EXCLUDED.phone), ''),       customers.phone)
          RETURNING id`,
         [
           customer.full_name?.trim() || null,

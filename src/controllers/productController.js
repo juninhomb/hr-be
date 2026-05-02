@@ -83,6 +83,27 @@ class ProductController {
     } catch (error) { next(error); }
   }
 
+  /**
+   * POST /products/import
+   * Body: { rows: [ { sku, stock?, name?, ... } ] }
+   * Actualiza apenas SKU existentes (mesmo contrato que o Excel exportado).
+   */
+  async importInventory(req, res, next) {
+    try {
+      const { rows } = req.body || {};
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return res.status(400).json({ error: 'rows (array não vazio) é obrigatório' });
+      }
+      if (rows.length > 5000) {
+        return res.status(400).json({ error: 'Máximo 5000 linhas por importação' });
+      }
+      const result = await ProductService.importInventoryRows(rows);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async destroy(req, res, next) {
     try {
       const { sku } = req.params;

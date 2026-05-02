@@ -101,7 +101,7 @@ app.post(
 // ==========================================
 // 3. MIDDLEWARES GLOBAIS
 // ==========================================
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 // Servir imagens de produtos como ficheiros estáticos.
 // URLs públicas: /uploads/products/<filename>

@@ -3,8 +3,11 @@ const CustomerService = require('../services/customerService');
 class CustomerController {
   async list(req, res, next) {
     try {
-      const { search } = req.query;
+      const raw = req.query.search;
+      const search = Array.isArray(raw) ? String(raw[0] ?? '').trim() : String(raw ?? '').trim();
       const customers = await CustomerService.getAllCustomers(search);
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.setHeader('Pragma', 'no-cache');
       res.json(customers);
     } catch (error) { next(error); }
   }

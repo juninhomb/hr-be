@@ -480,6 +480,221 @@ class ProductService {
 
     return { id, image_url: null };
   }
+
+  /**
+   * Importação em lote a partir de linhas já normalizadas (JSON).
+   * Não cria produtos novos — só actualiza SKU existentes.
+   * Campos omitidos no objecto da linha mantêm o valor actual na DB.
+   */
+  async importInventoryRows(rows) {
+    const summary = { updated: 0, failed: [] };
+
+    const resolveCategoryId = async (client, rawName) => {
+      const s = String(rawName ?? '').trim();
+      if (!s || /^sem categoria$/i.test(s)) return null;
+      const { rows: r } = await client.query(
+        `SELECT id FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1`,
+        [s],
+      );
+      if (!r[0]) {
+        const e = new Error(`Categoria não encontrada: "${s}"`);
+        e.code = 'IMPORT_ROW';
+        throw e;
+      }
+      return r[0].id;
+    };
+
+    const seenSku = new Set();
+
+    for (let idx = 0; idx < rows.length; idx++) {
+      const raw = rows[idx];
+      const sheetRow = idx + 2;
+
+      if (!raw || typeof raw !== 'object') {
+        summary.failed.push({ row: sheetRow, sku: '', reason: 'Linha inválida' });
+        continue;
+      }
+
+      const sku = String(raw.sku ?? '').trim().toUpperCase();
+
+      const isEmpty =
+        !sku &&
+        Object.values(raw).every((v) => v === '' || v === null || v === undefined);
+
+      if (isEmpty) continue;
+
+      if (!sku) {
+        summary.failed.push({ row: sheetRow, sku: '', reason: 'SKU em falta' });
+        continue;
+      }
+
+      if (seenSku.has(sku)) {
+        summary.failed.push({ row: sheetRow, sku, reason: 'SKU duplicado no ficheiro' });
+        continue;
+      }
+      seenSku.add(sku);
+
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+        const cur = await client.query(
+          `SELECT v.id AS variant_id, v.product_id, v.stock_quantity, v.color, v.size, v.is_active,
+                  p.name, p.base_price, p.category_id, p.is_featured
+           FROM product_variants v
+           INNER JOIN products p ON p.id = v.product_id
+           WHERE v.sku = $1
+           FOR UPDATE OF v, p`,
+          [sku],
+        );
+        if (!cur.rows[0]) {
+          await client.query('ROLLBACK');
+          summary.failed.push({
+            row: sheetRow,
+            sku,
+            reason: 'SKU não encontrado (apenas actualização, sem criar novos)',
+          });
+          continue;
+        }
+        const c = cur.rows[0];
+
+        if (raw.variant_id != null && raw.variant_id !== '') {
+          const vid = Number(raw.variant_id);
+          if (Number.isFinite(vid) && vid !== c.variant_id) {
+            await client.query('ROLLBACK');
+            summary.failed.push({ row: sheetRow, sku, reason: 'ID variante não coincide com o SKU' });
+            continue;
+          }
+        }
+        if (raw.product_id != null && raw.product_id !== '') {
+          const pid = Number(raw.product_id);
+          if (Number.isFinite(pid) && pid !== c.product_id) {
+            await client.query('ROLLBACK');
+            summary.failed.push({ row: sheetRow, sku, reason: 'ID produto não coincide com o SKU' });
+            continue;
+          }
+        }
+
+        let name = c.name;
+        if ('name' in raw) {
+          name = String(raw.name ?? '').trim();
+          if (!name) {
+            await client.query('ROLLBACK');
+            summary.failed.push({ row: sheetRow, sku, reason: 'Nome do produto vazio' });
+            continue;
+          }
+        }
+
+        let basePrice = Number(c.base_price);
+        if ('base_price' in raw) {
+          const p = Number(String(raw.base_price).replace(',', '.'));
+          if (!Number.isFinite(p) || p < 0) {
+            await client.query('ROLLBACK');
+            summary.failed.push({ row: sheetRow, sku, reason: 'Preço (€) inválido' });
+            continue;
+          }
+          basePrice = p;
+        }
+
+        let categoryId = c.category_id;
+        if (
+          'category_id' in raw &&
+          raw.category_id !== undefined &&
+          raw.category_id !== null &&
+          raw.category_id !== ''
+        ) {
+          const cid = Number(raw.category_id);
+          if (!Number.isFinite(cid)) {
+            await client.query('ROLLBACK');
+            summary.failed.push({ row: sheetRow, sku, reason: 'ID de categoria inválido' });
+            continue;
+          }
+          categoryId = cid;
+        } else if ('category_name' in raw) {
+          categoryId = await resolveCategoryId(client, raw.category_name);
+        }
+
+        let stockNum = Number(c.stock_quantity);
+        if ('stock' in raw) {
+          const n = Math.round(Number(String(raw.stock).replace(/\s/g, '').replace(',', '.')));
+          if (!Number.isFinite(n) || n < 0) {
+            await client.query('ROLLBACK');
+            summary.failed.push({ row: sheetRow, sku, reason: 'Stock inválido' });
+            continue;
+          }
+          stockNum = n;
+        }
+
+        let color = c.color;
+        if ('color' in raw) {
+          const t = String(raw.color ?? '').trim();
+          color = t || null;
+        }
+
+        let size = c.size;
+        if ('size' in raw) {
+          const t = String(raw.size ?? '').trim();
+          size = t || null;
+        }
+
+        let isActive = c.is_active;
+        if ('variant_is_active' in raw) {
+          const v = raw.variant_is_active;
+          if (typeof v !== 'boolean') {
+            await client.query('ROLLBACK');
+            summary.failed.push({
+              row: sheetRow,
+              sku,
+              reason: '«Visível na loja» inválido (esperado Sim ou Não)',
+            });
+            continue;
+          }
+          isActive = v;
+        }
+
+        let isFeatured = Boolean(c.is_featured);
+        if ('is_featured' in raw) {
+          const v = raw.is_featured;
+          if (typeof v !== 'boolean') {
+            await client.query('ROLLBACK');
+            summary.failed.push({
+              row: sheetRow,
+              sku,
+              reason: '«Destaque» inválido (esperado Sim ou Não)',
+            });
+            continue;
+          }
+          isFeatured = v;
+        }
+
+        await client.query(
+          `UPDATE products SET name = $1, base_price = $2, category_id = $3, is_featured = $4 WHERE id = $5`,
+          [name, basePrice, categoryId, isFeatured, c.product_id],
+        );
+        await client.query(
+          `UPDATE product_variants SET stock_quantity = $1, color = $2, size = $3, is_active = $4 WHERE sku = $5`,
+          [stockNum, color, size, isActive, sku],
+        );
+
+        await client.query('COMMIT');
+        summary.updated++;
+      } catch (e) {
+        try {
+          await client.query('ROLLBACK');
+        } catch (_) {
+          /* ignore */
+        }
+        summary.failed.push({
+          row: sheetRow,
+          sku,
+          reason: e.code === 'IMPORT_ROW' ? e.message : (e.message || 'Erro ao guardar'),
+        });
+      } finally {
+        client.release();
+      }
+    }
+
+    return summary;
+  }
 }
 
 // -------------------------------------------------------------

@@ -10,11 +10,24 @@ function cleanOpt(val, maxLen) {
 
 class CustomerService {
   async getAllCustomers(search = '') {
-    const q = `%${search}%`;
-    // total_orders é DERIVADO da tabela `orders` (status pago/enviado/entregue) para
-    // evitar dessincronização. O contador denormalizado em `customers.total_orders`
-    // pode ficar errado em fluxos como cancelar→apagar, ou inserts via n8n.
-    const fullQuery = `
+    const term = String(search ?? '').trim();
+    // Lista completa: sem WHERE ILIKE (mais claro, mais rápido, evita ambiguidades com %%).
+    // Com termo: filtra em nome, WhatsApp, e-mail, morada.
+    const params = term ? [`%${term}%`] : [];
+
+    const fullListQuery = `
+      SELECT c.id, c.full_name, c.whatsapp_number, c.email, c.address, c.created_at,
+             c.postal_code, c.city, c.district, c.country, c.phone,
+             COALESCE((
+               SELECT COUNT(*)::int FROM orders o
+                WHERE o.customer_id = c.id
+                  AND o.status IN ('pago','enviado','entregue')
+             ), 0) AS total_orders,
+             (SELECT COUNT(*)::int FROM customer_addresses a WHERE a.customer_id = c.id) AS address_count
+      FROM customers c
+      ORDER BY c.full_name ASC NULLS LAST, c.created_at DESC
+    `;
+    const fullSearchQuery = `
       SELECT c.id, c.full_name, c.whatsapp_number, c.email, c.address, c.created_at,
              c.postal_code, c.city, c.district, c.country, c.phone,
              COALESCE((
@@ -29,7 +42,19 @@ class CustomerService {
                OR COALESCE(c.postal_code, '') ILIKE $1 OR COALESCE(c.address, '') ILIKE $1
       ORDER BY c.full_name ASC NULLS LAST, c.created_at DESC
     `;
-    const legacyQuery = `
+
+    const legacyListQuery = `
+      SELECT c.id, c.full_name, c.whatsapp_number, c.email, c.address, c.created_at,
+             COALESCE((
+               SELECT COUNT(*)::int FROM orders o
+                WHERE o.customer_id = c.id
+                  AND o.status IN ('pago','enviado','entregue')
+             ), 0) AS total_orders,
+             0::int AS address_count
+      FROM customers c
+      ORDER BY c.full_name ASC NULLS LAST, c.created_at DESC
+    `;
+    const legacySearchQuery = `
       SELECT c.id, c.full_name, c.whatsapp_number, c.email, c.address, c.created_at,
              COALESCE((
                SELECT COUNT(*)::int FROM orders o
@@ -43,7 +68,7 @@ class CustomerService {
       ORDER BY c.full_name ASC NULLS LAST, c.created_at DESC
     `;
     try {
-      const { rows } = await db.query(fullQuery, [q]);
+      const { rows } = await db.query(term ? fullSearchQuery : fullListQuery, params);
       return rows;
     } catch (err) {
       const code = err?.code;
@@ -55,7 +80,7 @@ class CustomerService {
         || msg.includes('postal_code')
         || msg.includes('district');
       if (schemaMismatch) {
-        const { rows } = await db.query(legacyQuery, [q]);
+        const { rows } = await db.query(term ? legacySearchQuery : legacyListQuery, params);
         return rows.map((r) => ({
           ...r,
           postal_code: r.postal_code ?? null,
@@ -131,14 +156,14 @@ class CustomerService {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT (whatsapp_number)
       DO UPDATE SET
-        full_name   = EXCLUDED.full_name,
-        email       = EXCLUDED.email,
-        address     = EXCLUDED.address,
-        postal_code = EXCLUDED.postal_code,
-        city        = EXCLUDED.city,
-        district    = EXCLUDED.district,
-        country     = EXCLUDED.country,
-        phone       = EXCLUDED.phone
+        full_name   = COALESCE(NULLIF(TRIM(EXCLUDED.full_name), ''),   customers.full_name),
+        email       = COALESCE(NULLIF(TRIM(EXCLUDED.email), ''),       customers.email),
+        address     = COALESCE(NULLIF(TRIM(EXCLUDED.address), ''),     customers.address),
+        postal_code = COALESCE(NULLIF(TRIM(EXCLUDED.postal_code), ''), customers.postal_code),
+        city        = COALESCE(NULLIF(TRIM(EXCLUDED.city), ''),         customers.city),
+        district    = COALESCE(NULLIF(TRIM(EXCLUDED.district), ''),     customers.district),
+        country     = COALESCE(NULLIF(TRIM(EXCLUDED.country), ''),     customers.country),
+        phone       = COALESCE(NULLIF(TRIM(EXCLUDED.phone), ''),       customers.phone)
       RETURNING *`;
     const { rows } = await db.query(insertSql, [
       full_name,

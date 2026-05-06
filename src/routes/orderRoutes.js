@@ -30,6 +30,7 @@ router.get('/pending', OrderController.listPending);
 router.get('/history', OrderController.listHistory);
 router.post('/confirm', OrderController.confirm);
 router.post('/mail/test', MailController.test);
+router.post('/coupon-quote', OrderController.couponQuote);
 router.post('/create', OrderController.create);
 
 // Inventário (Produtos)
@@ -98,6 +99,7 @@ router.delete('/customers/:whatsapp', CustomerController.destroy);
 
 // Detalhe / cancelamento de pedidos por ID — declarados POR ÚLTIMO
 // para não capturar /products, /customers, /pending, etc.
+router.post('/:id/stripe-checkout-session', OrderController.createPdvStripeCheckoutSession);
 router.get('/:id', OrderController.show);
 router.post('/:id/cancel', OrderController.cancel);
 router.post('/:id/pickup-ready', OrderController.notifyPickupReady);

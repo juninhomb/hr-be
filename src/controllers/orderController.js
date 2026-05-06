@@ -138,7 +138,40 @@ class OrderController {
       const result = await OrderService.createManualOrder(req.body);
       res.status(201).json(result);
     } catch (error) {
-      if (error.message?.match(/stock|item|quantidade/i)) {
+      if (error.message?.match(/stock|item|quantidade|cupão|Cupão|desconto|migração/i)) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  async couponQuote(req, res, next) {
+    try {
+      const { code, items } = req.body || {};
+      const data = await OrderService.couponQuoteForPdv({ code, items });
+      res.json(data);
+    } catch (error) {
+      if (error.message?.match(/carrinho|inválido|cupão|Indica/i)) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  async createPdvStripeCheckoutSession(req, res, next) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+      const data = await OrderService.createPdvStripeCheckoutSession(id);
+      res.json(data);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      if (error.message?.match(/Define STRIPE|configurado|STRIPE_SECRET|STRIPE_ADMIN_PUBLIC|origem do admin/i)) {
+        return res.status(503).json({ error: error.message });
+      }
+      if (error.message?.match(/pedido|pendente|PDV|Stripe|inválido|registado/i)) {
         return res.status(400).json({ error: error.message });
       }
       next(error);

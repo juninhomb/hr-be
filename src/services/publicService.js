@@ -4,6 +4,7 @@ const stripeCheckoutService = require('./stripeCheckoutService');
 const { assertValidWhatsappOrThrow, canonicalWhatsappNumber } = require('../utils/whatsappNormalize');
 const { upsertCustomerAddress } = require('./customerAddressService');
 const { resolveCoupon } = require('../utils/discountCoupons');
+const { assertStripeCheckoutRedirects } = require('../utils/stripeCheckoutRedirects');
 
 /**
  * Serviços de leitura/escrita públicos para o site de vendas (hrstore-site).
@@ -834,47 +835,6 @@ function isValidPublicEmail(s) {
   const t = s.trim();
   if (t.length < 5 || t.length > 254) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t);
-}
-
-/** valida success/cancel URL para Stripe Checkout (anti open-redirect). */
-function assertStripeCheckoutRedirects(successUrl, cancelUrl) {
-  if (!successUrl || !cancelUrl) {
-    throw publicError(400, 'success_url e cancel_url são obrigatórios.');
-  }
-  if (!String(successUrl).includes('{CHECKOUT_SESSION_ID}')) {
-    throw publicError(
-      400,
-      'success_url deve incluir o placeholder {CHECKOUT_SESSION_ID} (exigência Stripe).',
-    );
-  }
-
-  const raw = process.env.STRIPE_CHECKOUT_ALLOWED_ORIGINS?.trim();
-  const allowed = raw
-    ? raw.split(',').map((s) => s.trim()).filter(Boolean)
-    : ['http://localhost:3002', 'http://127.0.0.1:3002'];
-
-  if (process.env.STRIPE_SECRET_KEY?.trim() && !raw) {
-    throw publicError(
-      500,
-      'STRIPE_CHECKOUT_ALLOWED_ORIGINS é obrigatório quando Stripe está configurado (lista de origens do site público).',
-    );
-  }
-
-  for (const [name, rawVal] of [['success_url', successUrl], ['cancel_url', cancelUrl]]) {
-    const u = String(rawVal);
-    const safe = u.includes('{CHECKOUT_SESSION_ID}')
-      ? u.split('{CHECKOUT_SESSION_ID}').join('cs_placeholder_123')
-      : u;
-    let origin;
-    try {
-      origin = new URL(safe).origin;
-    } catch {
-      throw publicError(400, `${name} inválido.`);
-    }
-    if (!allowed.includes(origin)) {
-      throw publicError(400, `${name}: origem não autorizada (${origin}).`);
-    }
-  }
 }
 
 module.exports = new PublicService();

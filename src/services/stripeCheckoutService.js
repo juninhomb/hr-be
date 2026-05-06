@@ -42,6 +42,31 @@ function getStripeOrThrow() {
 }
 
 /**
+ * Mensagem útil para o operador / cliente quando sessions.create falha.
+ * @param {unknown} stripeErr
+ */
+function mapStripeCheckoutSessionError(stripeErr) {
+  const msg = String(stripeErr?.message || stripeErr || '');
+  const lower = msg.toLowerCase();
+  if (lower.includes('klarna')) {
+    return (
+      'Klarna não está disponível nesta conta Stripe. '
+      + 'Remove STRIPE_ENABLE_KLARNA do servidor ou activa Klarna no Dashboard Stripe.'
+    );
+  }
+  if (lower.includes('mb_way') || lower.includes('mbway')) {
+    return (
+      'MB Way no Checkout Stripe falhou. '
+      + 'Remove STRIPE_ENABLE_MBWAY_IN_CHECKOUT ou activa MB Way na conta Stripe.'
+    );
+  }
+  if (lower.includes('payment_method_types')) {
+    return `Stripe recusou os métodos de pagamento: ${msg}`;
+  }
+  return msg ? `Stripe: ${msg}` : 'Stripe recusou criar a sessão de pagamento.';
+}
+
+/**
  * Restaura stock e apaga pedido após falha ao criar sessão Stripe (evita pedidos órfãos).
  */
 async function cleanupFailedCheckoutOrder(orderId) {
@@ -186,17 +211,24 @@ async function createSessionForOrder({ orderId, customerEmail, successUrl, cance
     });
   }
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    locale: process.env.STRIPE_CHECKOUT_LOCALE || 'pt',
-    client_reference_id: String(orderId),
-    metadata: { order_id: String(orderId) },
-    customer_email: customerEmail?.trim() || undefined,
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    line_items,
-    payment_method_types: stripeCheckoutPaymentMethodTypes(),
-  });
+  let session;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      locale: process.env.STRIPE_CHECKOUT_LOCALE || 'pt',
+      client_reference_id: String(orderId),
+      metadata: { order_id: String(orderId) },
+      customer_email: customerEmail?.trim() || undefined,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      line_items,
+      payment_method_types: stripeCheckoutPaymentMethodTypes(),
+    });
+  } catch (e) {
+    const err = new Error(mapStripeCheckoutSessionError(e));
+    err.status = 502;
+    throw err;
+  }
 
   await db.query(`UPDATE orders SET stripe_link_id = $1 WHERE id = $2`, [
     session.id,
@@ -204,6 +236,26 @@ async function createSessionForOrder({ orderId, customerEmail, successUrl, cance
   ]);
 
   return session;
+}
+
+/**
+ * Incrementa total_orders do cliente quando o pedido passa a pago (webhook Stripe).
+ * Idempotente com o UPDATE ... WHERE status = 'aguardando_pagamento' (só corre após sucesso).
+ */
+async function bumpCustomerTotalOrdersForOrder(orderId) {
+  const oid = parseInt(orderId, 10);
+  if (!Number.isFinite(oid)) return;
+  const { rows } = await db.query(
+    `SELECT customer_id FROM orders WHERE id = $1`,
+    [oid],
+  );
+  const cid = rows[0]?.customer_id;
+  if (cid) {
+    await db.query(
+      `UPDATE customers SET total_orders = total_orders + 1 WHERE id = $1`,
+      [cid],
+    );
+  }
 }
 
 /**
@@ -254,6 +306,7 @@ async function applyCheckoutSessionCompleted(session, options = {}) {
   );
 
   if (res.rowCount > 0) {
+    await bumpCustomerTotalOrdersForOrder(orderId);
     emailService.scheduleNotifyOrderPaymentConfirmed(orderId);
     return { updated: true, order_id: orderId, path: 'stripe_link_match' };
   }
@@ -322,6 +375,7 @@ async function applyCheckoutSessionCompleted(session, options = {}) {
       order_id: orderId,
       session_id: sessionId,
     });
+    await bumpCustomerTotalOrdersForOrder(orderId);
     emailService.scheduleNotifyOrderPaymentConfirmed(orderId);
   }
 

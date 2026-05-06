@@ -1,6 +1,17 @@
 const db = require('../config/db');
 const LogService = require('./logService');
 const emailService = require('./emailService');
+const { resolveCoupon } = require('../utils/discountCoupons');
+const { buildAdminPdvStripeCheckoutUrls } = require('../utils/stripeCheckoutRedirects');
+const stripeCheckoutService = require('./stripeCheckoutService');
+
+function itemsPlusShippingMinusDiscount(itemsTotal, discountAmount, shippingFee) {
+  const disc = Math.round(Number(discountAmount || 0) * 100) / 100;
+  const itemsNet = Math.round((Number(itemsTotal) - disc) * 100) / 100;
+  const ship = Number(shippingFee || 0);
+  const finalTotal = Math.round((itemsNet + ship) * 100) / 100;
+  return { itemsNet, finalTotal, discountRounded: disc };
+}
 
 /** Frete por defeito (€) em criação manual com entrega. `.env`: DEFAULT_SHIPPING_FEE_EUR */
 function defaultShippingFeeEur() {
@@ -86,6 +97,88 @@ function normalizeCustomerNotesOnOrder(row) {
 }
 
 class OrderService {
+  /**
+   * Pré-visualização de cupão no PDV (subtotal = Σ unit_price × qty das linhas enviadas).
+   * POST `/api/orders/coupon-quote`
+   */
+  async couponQuoteForPdv({ code, items }) {
+    const trimmed = String(code ?? '').trim();
+    if (!trimmed) {
+      throw new Error('Indica o código do cupão.');
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error('O carrinho está vazio.');
+    }
+    let itemsSubtotal = 0;
+    for (const it of items) {
+      const sku = String(it.sku ?? '').trim();
+      const qty = parseInt(it.quantity, 10);
+      const unit = Number(it.unit_price);
+      if (!sku || !qty || qty <= 0 || !Number.isFinite(unit) || unit < 0) {
+        throw new Error('Itens inválidos.');
+      }
+      itemsSubtotal += unit * qty;
+    }
+    itemsSubtotal = Math.round(itemsSubtotal * 100) / 100;
+    const resolved = await resolveCoupon(db, trimmed, itemsSubtotal);
+    if (!resolved) {
+      throw new Error('Cupão inválido ou indisponível.');
+    }
+    return {
+      ok: true,
+      items_subtotal: itemsSubtotal,
+      discount_amount: resolved.discountAmount,
+      coupon_code: resolved.code,
+    };
+  }
+
+  /**
+   * PDV: gera sessão Stripe Checkout para pedido loja física pendente com payment_method = stripe.
+   * POST `/api/orders/:id/stripe-checkout-session`
+   */
+  async createPdvStripeCheckoutSession(orderId) {
+    const id = parseInt(orderId, 10);
+    if (!Number.isFinite(id) || id < 1) {
+      throw new Error('ID do pedido inválido.');
+    }
+    stripeCheckoutService.getStripeOrThrow();
+    const order = await this.getOrderById(id);
+    if (!order) {
+      throw new Error('Pedido não encontrado.');
+    }
+    const origin = String(order.origin || '').trim().toLowerCase();
+    if (origin !== 'loja_fisica') {
+      throw new Error('Só pedidos da loja física (PDV) podem usar este link Stripe.');
+    }
+    if (String(order.status) !== 'aguardando_pagamento') {
+      throw new Error('O pedido tem de estar pendente de pagamento para gerar o link Stripe.');
+    }
+    const pm = String(order.payment_method || '').trim().toLowerCase();
+    if (pm !== 'stripe') {
+      throw new Error('Este pedido não está registado com forma de pagamento Stripe.');
+    }
+    const { successUrl, cancelUrl } = buildAdminPdvStripeCheckoutUrls();
+    const customerEmail = order.email !== null && order.email !== undefined
+      ? String(order.email).trim()
+      : undefined;
+    const session = await stripeCheckoutService.createSessionForOrder({
+      orderId: id,
+      customerEmail: customerEmail || undefined,
+      successUrl,
+      cancelUrl,
+    });
+    if (!session?.url) {
+      const err = new Error('Stripe não devolveu URL de checkout.');
+      err.status = 502;
+      throw err;
+    }
+    return {
+      checkout_url: session.url,
+      stripe_session_id: session.id,
+      order_id: id,
+    };
+  }
+
   // -------------------------------------------------------------
   // Helper: anexa items[] aos pedidos já consultados
   // -------------------------------------------------------------
@@ -176,12 +269,13 @@ class OrderService {
     const {
       customer_id = null,
       items = [],
-      total_amount,
+      total_amount: _clientTotalIgnored,
       payment_method = 'dinheiro',
       status = 'pago',
       origin = 'loja_fisica',
       is_delivery = false,
       shipping_fee = defaultShippingFeeEur(),
+      coupon_code: rawCoupon = null,
     } = data;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -191,6 +285,12 @@ class OrderService {
       throw new Error('Status inicial inválido (use pago ou aguardando_pagamento).');
     }
 
+    const paymentNorm = String(payment_method || '').trim().toLowerCase();
+    if (paymentNorm === 'stripe' && status !== 'aguardando_pagamento') {
+      throw new Error(
+        'Com pagamento Stripe, o pedido fica pendente até o cliente pagar online (não uses estado «pago» na criação).',
+      );
+    }
 
     // Define shipping_fee conforme regra
     const rawShippingFee = String(shipping_fee).replace(',', '.');
@@ -199,27 +299,22 @@ class OrderService {
       ? (Number.isFinite(parsedShippingFee) ? parsedShippingFee : defaultShippingFeeEur())
       : 0;
 
-    console.log(`[orderService] createManualOrder → status=${status} | items=${items.length} | customer_id=${customer_id ?? '∅'} | stock SEMPRE deduzido | is_delivery=${is_delivery} | shipping_fee=${finalShippingFee}`);
+    const couponTrim = String(rawCoupon ?? '').trim();
+
+    console.log(`[orderService] createManualOrder → status=${status} | items=${items.length} | customer_id=${customer_id ?? '∅'} | stock SEMPRE deduzido | is_delivery=${is_delivery} | shipping_fee=${finalShippingFee}${couponTrim ? ` | coupon=${couponTrim}` : ''}`);
 
     const client = await db.connect();
     try {
       await client.query('BEGIN');
 
-      let computedTotal = Number(total_amount);
-      if (!computedTotal || Number.isNaN(computedTotal)) {
-        computedTotal = items.reduce(
-          (acc, i) => acc + Number(i.unit_price || 0) * Number(i.quantity || 0),
-          0
-        );
-      }
-
       const orderRes = await client.query(
         `INSERT INTO orders (customer_id, total_amount, status, origin, payment_method, is_delivery, shipping_fee)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [customer_id, computedTotal, status, origin, payment_method, is_delivery, finalShippingFee]
+         VALUES ($1, 0, $2, $3, $4, $5, $6) RETURNING id`,
+        [customer_id, status, origin, payment_method, is_delivery, finalShippingFee]
       );
       const orderId = orderRes.rows[0].id;
 
+      let itemsTotal = 0;
       for (const item of items) {
         const qty = parseInt(item.quantity, 10);
         if (!qty || qty <= 0) throw new Error(`Quantidade inválida para SKU ${item.sku}`);
@@ -237,11 +332,61 @@ class OrderService {
         }
         const variantId = stockUpdate.rows[0].id;
 
+        const lineUnit = Number(item.unit_price ?? 0);
         await client.query(
           `INSERT INTO order_items (order_id, variant_id, sku, quantity, unit_price)
            VALUES ($1, $2, $3, $4, $5)`,
           [orderId, variantId, item.sku, qty, item.unit_price ?? null]
         );
+        itemsTotal += lineUnit * qty;
+      }
+      itemsTotal = Math.round(itemsTotal * 100) / 100;
+
+      let discountAmount = 0;
+      let couponStored = null;
+      if (couponTrim) {
+        const resolved = await resolveCoupon(client, couponTrim, itemsTotal);
+        if (!resolved) {
+          throw new Error('Cupão inválido ou indisponível.');
+        }
+        discountAmount = resolved.discountAmount;
+        couponStored = resolved.code;
+      }
+
+      const { itemsNet, finalTotal, discountRounded } = itemsPlusShippingMinusDiscount(
+        itemsTotal,
+        discountAmount,
+        finalShippingFee,
+      );
+      if (itemsNet < 0.01) {
+        throw new Error('O desconto não pode anular o valor dos artigos.');
+      }
+
+      try {
+        await client.query(
+          `UPDATE orders
+              SET total_amount = $1,
+                  coupon_code = $2,
+                  discount_amount = $3
+            WHERE id = $4`,
+          [finalTotal, couponStored, discountRounded, orderId],
+        );
+      } catch (updErr) {
+        const msg = String(updErr?.message || '');
+        if (updErr?.code === '42703' && /coupon_code|discount_amount/i.test(msg)) {
+          if (discountAmount > 0) {
+            throw new Error(
+              'Cupões não estão activos na base de dados. Corre a migração '
+              + '`database/migrations/2026-05-02_orders_discount_coupon.sql`.',
+            );
+          }
+          await client.query(
+            `UPDATE orders SET total_amount = $1 WHERE id = $2`,
+            [finalTotal, orderId],
+          );
+        } else {
+          throw updErr;
+        }
       }
 
       // total_orders só conta quando o pedido se torna efectivamente pago
@@ -254,10 +399,21 @@ class OrderService {
 
       await client.query('COMMIT');
       await LogService.register('system', 'order_created', {
-        orderId, customer_id, total: computedTotal, origin, status,
+        orderId, customer_id, total: finalTotal, origin, status,
         items: items.length, stock_deducted: true,
+        coupon_code: couponStored,
+        discount_amount: discountRounded,
       });
-      return { success: true, orderId, total_amount: computedTotal, status, is_delivery, shipping_fee: finalShippingFee };
+      return {
+        success: true,
+        orderId,
+        total_amount: finalTotal,
+        status,
+        is_delivery,
+        shipping_fee: finalShippingFee,
+        coupon_code: couponStored,
+        discount_amount: discountRounded,
+      };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -278,10 +434,26 @@ class OrderService {
     try {
       await client.query('BEGIN');
 
-      const orderRes = await client.query(
-        `SELECT id, customer_id, status, is_delivery, shipping_fee FROM orders WHERE id = $1 FOR UPDATE`,
-        [orderId]
-      );
+      let orderRes;
+      try {
+        orderRes = await client.query(
+          `SELECT id, customer_id, status, is_delivery, shipping_fee,
+                  COALESCE(discount_amount, 0) AS discount_amount
+             FROM orders WHERE id = $1 FOR UPDATE`,
+          [orderId]
+        );
+      } catch (selErr) {
+        const smsg = String(selErr?.message || '');
+        if (selErr?.code === '42703' && /discount_amount/i.test(smsg)) {
+          orderRes = await client.query(
+            `SELECT id, customer_id, status, is_delivery, shipping_fee FROM orders WHERE id = $1 FOR UPDATE`,
+            [orderId]
+          );
+          if (orderRes.rows[0]) orderRes.rows[0].discount_amount = 0;
+        } else {
+          throw selErr;
+        }
+      }
       if (!orderRes.rows[0]) throw new Error('Pedido não encontrado.');
       const order = orderRes.rows[0];
       if (order.status === 'pago') throw new Error('Pedido já está pago.');
@@ -323,11 +495,28 @@ class OrderService {
           recomputedTotal += Number(it.unit_price || 0) * qty;
         }
         const finalTotal = recomputedTotal + finalShippingFee;
-        await client.query(
-          `UPDATE orders SET total_amount = $1, shipping_fee = $2 WHERE id = $3`,
-          [finalTotal, finalShippingFee, orderId]
-        );
-        console.log(`[orderService] confirmPayment#${orderId} → override: ${overrideItems.length} items NOVOS, stock deduzido, total_amount recalculado = ${finalTotal.toFixed(2)}, shipping_fee = ${finalShippingFee.toFixed(2)}`);
+        try {
+          await client.query(
+            `UPDATE orders
+                SET total_amount = $1,
+                    shipping_fee = $2,
+                    discount_amount = 0,
+                    coupon_code = NULL
+              WHERE id = $3`,
+            [finalTotal, finalShippingFee, orderId],
+          );
+        } catch (updErr) {
+          const msg = String(updErr?.message || '');
+          if (updErr?.code === '42703' && /coupon_code|discount_amount/i.test(msg)) {
+            await client.query(
+              `UPDATE orders SET total_amount = $1, shipping_fee = $2 WHERE id = $3`,
+              [finalTotal, finalShippingFee, orderId],
+            );
+          } else {
+            throw updErr;
+          }
+        }
+        console.log(`[orderService] confirmPayment#${orderId} → override: ${overrideItems.length} items NOVOS, stock deduzido, total_amount recalculado = ${finalTotal.toFixed(2)}, shipping_fee = ${finalShippingFee.toFixed(2)} (cupão limpo)`);
       } else {
         const { rows: items } = await client.query(
           `SELECT quantity, unit_price FROM order_items WHERE order_id = $1`,
@@ -341,12 +530,20 @@ class OrderService {
           (acc, it) => acc + Number(it.unit_price || 0) * Number(it.quantity || 0),
           0
         );
-        const finalTotal = itemsTotal + finalShippingFee;
+        const orderDisc = Number(order.discount_amount || 0);
+        const { itemsNet, finalTotal } = itemsPlusShippingMinusDiscount(
+          itemsTotal,
+          orderDisc,
+          finalShippingFee,
+        );
+        if (itemsNet < 0.01) {
+          throw new Error('Total de artigos inválido após desconto.');
+        }
         await client.query(
           `UPDATE orders SET total_amount = $1, shipping_fee = $2 WHERE id = $3`,
           [finalTotal, finalShippingFee, orderId]
         );
-        console.log(`[orderService] confirmPayment#${orderId} → status → pago (stock JÁ tinha sido deduzido na criação) | total_amount = ${finalTotal.toFixed(2)}, shipping_fee = ${finalShippingFee.toFixed(2)}`);
+        console.log(`[orderService] confirmPayment#${orderId} → status → pago (stock JÁ tinha sido deduzido na criação) | total_amount = ${finalTotal.toFixed(2)}, shipping_fee = ${finalShippingFee.toFixed(2)}, desconto = ${orderDisc.toFixed(2)}`);
       }
 
       await client.query(`UPDATE orders SET status = 'pago' WHERE id = $1`, [orderId]);
@@ -378,10 +575,26 @@ class OrderService {
     try {
       await client.query('BEGIN');
 
-      const orderRes = await client.query(
-        `SELECT id, status, origin, is_delivery FROM orders WHERE id = $1 FOR UPDATE`,
-        [orderId]
-      );
+      let orderRes;
+      try {
+        orderRes = await client.query(
+          `SELECT id, status, origin, is_delivery,
+                  COALESCE(discount_amount, 0) AS discount_amount
+             FROM orders WHERE id = $1 FOR UPDATE`,
+          [orderId]
+        );
+      } catch (selErr) {
+        const smsg = String(selErr?.message || '');
+        if (selErr?.code === '42703' && /discount_amount/i.test(smsg)) {
+          orderRes = await client.query(
+            `SELECT id, status, origin, is_delivery FROM orders WHERE id = $1 FOR UPDATE`,
+            [orderId]
+          );
+          if (orderRes.rows[0]) orderRes.rows[0].discount_amount = 0;
+        } else {
+          throw selErr;
+        }
+      }
       if (!orderRes.rows[0]) throw new Error('Pedido não encontrado.');
       const order = orderRes.rows[0];
       if (order.status !== 'aguardando_pagamento') {
@@ -402,7 +615,11 @@ class OrderService {
         (acc, it) => acc + Number(it.unit_price || 0) * Number(it.quantity || 0),
         0
       );
-      const finalTotal = itemsTotal + fee;
+      const orderDisc = Number(order.discount_amount || 0);
+      const { finalTotal } = itemsPlusShippingMinusDiscount(itemsTotal, orderDisc, fee);
+      if (Math.round((itemsTotal - orderDisc) * 100) / 100 < 0.01) {
+        throw new Error('Total de artigos inválido após desconto.');
+      }
 
       // Pedidos WhatsApp podem chegar sem is_delivery — ao gravar frete, marca como entrega.
       const shouldFlagDelivery = !order.is_delivery && fee > 0;

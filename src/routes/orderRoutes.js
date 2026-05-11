@@ -22,6 +22,9 @@ router.post('/login', loginLimiter, AuthController.login);
 // --- ROTAS PROTEGIDAS (Requerem Token) ---
 router.use(authMiddleware);
 
+// Antes de rotas `/:id` — diagnóstico Stripe (live vs test)
+router.get('/diagnostics/stripe-env', OrderController.stripeEnvDiagnostics);
+
 // Dashboard & Analytics
 router.get('/dashboard/stats', DashboardController.getStats);
 

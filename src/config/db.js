@@ -1,5 +1,5 @@
+require('./env');
 const { Pool } = require('pg');
-require('dotenv').config();
 
 function intEnv(key, fallback) {
   const raw = process.env[key];

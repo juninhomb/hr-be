@@ -1,0 +1,108 @@
+produto,cor,tamanho,quantidade,preco
+Blusa Térmica,AZUL,M,2,7.00
+Blusa Térmica,PRETA,M,3,7.00
+Vestido Atena,PRETO,L,1,39.00
+Vestido Atena,OFF WHITE,S,1,39.00
+Vestido Atena,CASTANHO,M,1,39.00
+Calça Alfaiataria com Cinto,OFF WHITE,U,1,19.00
+Calça Alfaiataria,CASTANHO,S,2,21.00
+Calça Alfaiataria,CASTANHO,M,0,21.00
+Calça Alfaiataria,PRETA,S,0,21.00
+Calça Alfaiataria,PRETA,M,0,21.00
+Calça Alfaiataria,PRETA,L,1,21.00
+Macacão Jade,OFF WHITE,L/XL,1,28.00
+Macacão Jade,CASTANHO,S/M,1,28.00
+Conjunto Lia,AREIA,S/M,1,25.00
+Conjunto Lia,AREIA,L/XL,2,25.00
+Conjunto Lia,OLIVA,L/XL,1,25.00
+Conjunto Cleo 2.0,BRANCO,U,1,27.00
+Conjunto Liz,TERRACOTA,M,1,38.00
+Lenço Floresta,PRETO,U,6,4.00
+Lenço Floresta,AZUL,U,3,4.00
+Lenço Floresta,BEGE,U,3,4.00
+Lenço Floresta,CINZA,U,7,4.00
+Lenço Floresta,ROSA,U,4,4.00
+Calça Alfaiataria Pregas,BORDO,L,1,17.00
+Vestido Mavie,AREIA,U,1,18.00
+Biquíni Olho Grego,AMARELO,G,1,30.00
+Biquíni Buzios,OFF WHITE,P,1,30.00
+Biquíni Buzios,CASTANHO,P,1,30.00
+Biquíni Buzios,VERDE,P,1,30.00
+Maio,CEREJA,G,1,30.00
+Maio,PRETO,G,1,30.00
+Biquíni Bicolor,PRETO,P,1,30.00
+Calça Jeans,-,38,1,22.00
+Calça Jeans,-,40,0,22.00
+Calça Jeans,-,42,2,22.00
+Calça Jeans,-,44,0,22.00
+Calça Jeans,-,46,2,22.00
+Conjunto Ayla,BRANCO,U,2,23.00
+Conjunto Trico Siena,PRETO,U,1,24.00
+Vestido Tali,ROSA,U,1,37.00
+Vestido Tali,AMARELO,U,1,37.00
+Vestido Tali,PRETO,U,2,37.00
+Conjunto Ibiza 2.0,ROSA,U,0,27.00
+Conjunto Ibiza 2.0,AZUL,U,0,27.00
+Conjunto Ibiza 2.0,BEGE,U,0,27.00
+Conjunto Ibiza 2.0,CASTANHO,U,0,27.00
+Conjunto Ibiza 2.0,PRETO,U,0,27.00
+Conjunto Ibiza 1.0,PRETO,U,1,27.00
+Conjunto Ibiza 1.0,AZUL CLARO,U,3,27.00
+Conjunto Ibiza 1.0,VERDE,U,7,27.00
+Body com Fivela,BEGE,U,0,13.00
+Body com Fivela,CAFE,U,0,13.00
+Body com Fivela,PRETO,U,0,13.00
+Body com Fivela,BRANCO,U,0,13.00
+Short Sem Costura,MARIFM,S/M,4,5.00
+Short Sem Costura,MARFIM,L/XL,4,5.00
+Short Sem Costura,BEGE,S/M,1,5.00
+Short Sem Costura,BEGE,L/XL,4,5.00
+Short Sem Costura,PRETO,S/M,6,5.00
+Short Sem Costura,PRETO,L/XL,5,5.00
+Conjunto Lara,AZUL,U,1,20.00
+Conjunto Lara,PRETO,U,2,20.00
+Vestido Bia,AZUL MARINHO,U,0,23.00
+Vestido Bia,ROSA,U,0,23.00
+Vestido Bia,OLIVA,U,2,23.00
+Vestido Bia,AMARELO,U,0,23.00
+Calça Sarja,-,XS - 34,1,23.00
+Calça Sarja,-,S - 36,0,23.00
+Calça Sarja,-,M - 38,0,23.00
+Calça Sarja,-,L,1,23.00
+Calça Sarja,-,XL - 44,1,23.00
+Blazer Gola Alta,CASTANHO,U,0,23.00
+Blazer Gola Alta,AREIA,U,1,23.00
+Blazer Gola Alta,PRETO,U,0,23.00
+Calça Algodão,AREIA,U,2,14.00
+Conjunto Ísis,CASTANHO,S/M,0,55.00
+Conjunto Ísis,CASTANHO,M/L,0,55.00
+Calça Listra,AMARELA,S/M,1,22.00
+Calça Listra,AMARELA,M/L,1,22.00
+Vestido Trico Listrado,BRANCO,M/L,1,24.00
+Vestido Trico Listrado,AREIA,M/L,1,24.00
+Blusa Básica Renda,BRANCA,U,5,12.00
+Blusa Básica Renda,CASTANHO,U,0,12.00
+Blusa Básica Renda,PRETA,U,0,12.00
+Camisa Listrada,ROSA,S/M,0,24.00
+Camisa Listrada,ROSA,M/L,0,24.00
+Camisa Listrada,AZUL,M/L,0,24.00
+Camisa Listrada,OFF WHITE,S/M,0,24.00
+Camisa Listrada,OFF WHITE,M/L,0,24.00
+Macacão Alfaiataria,CASTANHO,U,0,24.00
+Conjunto Mari,BRANCO,U,3,29.00
+Conjunto Mari,CASTANHO,U,3,29.00
+Conjunto Mari,MARINHO,U,3,29.00
+Calça Onça,-,XS,0,29.00
+Calça Onça,-,S,0,29.00
+Calça Onça,-,M,0,29.00
+Calça Onça,-,L,0,29.00
+Calça Onça,-,XL,1,29.00
+Blusa Polo Tricot,BRANCA,U,1,13.00
+Blusa Polo Tricot,BORDO,U,3,13.00
+Calça Jeans Flor,-,S,1,29.00
+Calça Jeans Flor,-,M,1,29.00
+Calça Jeans Flor,-,L,1,29.00
+Calça Jeans Flor,-,XL,1,29.00
+Colete,ROSA,U,2,14.00
+Colete,AMARELO,U,2,14.00
+Colete,CASTANHO,U,2,14.00

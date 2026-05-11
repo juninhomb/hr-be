@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+require('./env');
 
 module.exports = (req, res, next) => {
   const token = req.headers['authorization']; // Espera "Bearer TOKEN_AQUI"

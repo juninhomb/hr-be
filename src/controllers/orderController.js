@@ -177,6 +177,31 @@ class OrderController {
       next(error);
     }
   }
+
+  /**
+   * Diagnóstico: confirma se o processo Node está com sk_live_ ou sk_test_
+   * (ex.: após deploy / PM2 com CWD errado). Requer JWT admin.
+   */
+  async stripeEnvDiagnostics(req, res) {
+    const { ENV_PATH } = require('../config/env');
+    const raw = process.env.STRIPE_SECRET_KEY;
+    const k = typeof raw === 'string' ? raw.trim() : '';
+    let mode = 'unset';
+    if (k.startsWith('sk_live_')) mode = 'live';
+    else if (k.startsWith('sk_test_')) mode = 'test';
+    else if (k) mode = 'invalid_prefix';
+    res.json({
+      stripe_mode: mode,
+      checkout_session_id_prefix: mode === 'live' ? 'cs_live_' : mode === 'test' ? 'cs_test_' : null,
+      env_file_resolved: ENV_PATH,
+      hint:
+        mode === 'test'
+          ? 'Servidor com sk_test_: actualiza STRIPE_SECRET_KEY para sk_live_ no ficheiro indicado, reinicia o backend e verifica que não há STRIPE_SECRET_KEY=sk_test no systemd/PM2/Docker.'
+          : mode === 'live'
+            ? 'Novas Checkout Sessions devem usar URLs com cs_live_.'
+            : 'Define STRIPE_SECRET_KEY no .env na raiz do backend.',
+    });
+  }
 }
 
 module.exports = new OrderController();

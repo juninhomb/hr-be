@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS products (
   category_id INTEGER,
   name VARCHAR(255) NOT NULL,
   description TEXT,
+  characteristics TEXT,
   base_price NUMERIC(12, 2) NOT NULL,
   image_placeholder_url VARCHAR(500),
   is_active BOOLEAN DEFAULT true,

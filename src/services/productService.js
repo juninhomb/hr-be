@@ -19,6 +19,7 @@ class ProductService {
           p.name,
           p.base_price            AS price,
           p.category_id,
+          p.characteristics       AS product_characteristics,
           c.name                  AS category_name,
           p.image_placeholder_url AS product_image,
           p.is_featured,
@@ -69,6 +70,7 @@ class ProductService {
     const { rows } = await db.query(`
       SELECT p.id, p.name, p.base_price,
              p.category_id,
+             p.characteristics,
              p.image_placeholder_url AS image_url,
              COUNT(v.id)::int AS variant_count
         FROM products p
@@ -118,6 +120,7 @@ class ProductService {
     const {
       stock_quantity, color, size, name, base_price, category_id,
       variant_is_active,
+      characteristics,
     } = data;
     const client = await db.connect();
     try {
@@ -136,8 +139,15 @@ class ProductService {
       if (
         name !== undefined ||
         base_price !== undefined ||
-        category_id !== undefined
+        category_id !== undefined ||
+        characteristics !== undefined
       ) {
+        const charVal =
+          characteristics === undefined
+            ? null
+            : characteristics === null || characteristics === ''
+              ? null
+              : String(characteristics).trim() || null;
         await client.query(
           `UPDATE products
            SET name        = COALESCE($1, name),
@@ -145,13 +155,19 @@ class ProductService {
                category_id = CASE
                                 WHEN $4::boolean THEN $3::int
                                 ELSE category_id
+                             END,
+               characteristics = CASE
+                                WHEN $6::boolean THEN $5
+                                ELSE characteristics
                              END
-           WHERE id = $5`,
+           WHERE id = $7`,
           [
             name ?? null,
             base_price ?? null,
             category_id === '' || category_id === null ? null : category_id ?? null,
             category_id !== undefined,
+            charVal,
+            characteristics !== undefined,
             productId,
           ],
         );
@@ -203,6 +219,7 @@ class ProductService {
     const {
       name, base_price, sku, color, size, stock_quantity = 0, category_id,
       variant_is_active: variantIsActive,
+      characteristics: rawCharacteristics,
     } = data;
 
     const client = await db.connect();
@@ -215,14 +232,19 @@ class ProductService {
           ? null
           : Number(category_id);
 
+      const characteristicsVal =
+        rawCharacteristics === undefined || rawCharacteristics === null || rawCharacteristics === ''
+          ? null
+          : String(rawCharacteristics).trim() || null;
+
       const wantsVariant =
         variantIsActive === undefined || variantIsActive === null ? true : Boolean(variantIsActive);
 
       const productRes = await client.query(
-        `INSERT INTO products (name, base_price, category_id)
-         VALUES ($1, $2, $3)
+        `INSERT INTO products (name, base_price, category_id, characteristics)
+         VALUES ($1, $2, $3, $4)
          RETURNING id`,
-        [name, base_price, cleanCategoryId],
+        [name, base_price, cleanCategoryId, characteristicsVal],
       );
       const productId = productRes.rows[0].id;
 
@@ -539,7 +561,7 @@ class ProductService {
         await client.query('BEGIN');
         const cur = await client.query(
           `SELECT v.id AS variant_id, v.product_id, v.stock_quantity, v.color, v.size, v.is_active,
-                  p.name, p.base_price, p.category_id, p.is_featured
+                  p.name, p.base_price, p.category_id, p.is_featured, p.characteristics
            FROM product_variants v
            INNER JOIN products p ON p.id = v.product_id
            WHERE v.sku = $1
@@ -666,9 +688,15 @@ class ProductService {
           isFeatured = v;
         }
 
+        let prodCharacteristics = c.characteristics;
+        if ('characteristics' in raw) {
+          const t = String(raw.characteristics ?? '').trim();
+          prodCharacteristics = t || null;
+        }
+
         await client.query(
-          `UPDATE products SET name = $1, base_price = $2, category_id = $3, is_featured = $4 WHERE id = $5`,
-          [name, basePrice, categoryId, isFeatured, c.product_id],
+          `UPDATE products SET name = $1, base_price = $2, category_id = $3, is_featured = $4, characteristics = $5 WHERE id = $6`,
+          [name, basePrice, categoryId, isFeatured, prodCharacteristics, c.product_id],
         );
         await client.query(
           `UPDATE product_variants SET stock_quantity = $1, color = $2, size = $3, is_active = $4 WHERE sku = $5`,

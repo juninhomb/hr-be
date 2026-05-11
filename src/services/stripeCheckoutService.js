@@ -287,11 +287,29 @@ async function applyCheckoutSessionCompleted(session, options = {}) {
     };
   }
 
-  const orderId =
-    parseInt(session.metadata?.order_id || session.client_reference_id || '', 10) || null;
-  if (!orderId) return { updated: false, reason: 'no_order_id' };
-
   const sessionId = String(session.id).trim();
+
+  let orderId =
+    parseInt(session.metadata?.order_id || session.client_reference_id || '', 10) || null;
+
+  // Sessões criadas pela API gravam `stripe_link_id` no pedido. Eventos reenviados ou
+  // respostas sem metadata (ex.: alguns fluxos de Payment Link / Dashboard) ainda têm
+  // `session.id` — recuperamos o pedido por esse id.
+  if (!orderId) {
+    const { rows: bySession } = await db.query(
+      `
+      SELECT id
+        FROM orders
+       WHERE TRIM(COALESCE(stripe_link_id, '')) = $1
+         AND status = 'aguardando_pagamento'
+       LIMIT 1
+      `,
+      [sessionId],
+    );
+    if (bySession[0]) orderId = bySession[0].id;
+  }
+
+  if (!orderId) return { updated: false, reason: 'no_order_id' };
 
   /**
    * Pedidos WhatsApp criam-se com `mb_way_ou_transferencia` (cliente escolhe MB Way, IBAN ou link

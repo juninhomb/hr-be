@@ -25,7 +25,7 @@ class ProductController {
 
   async create(req, res, next) {
     try {
-      const { name, base_price, sku, color, size, stock_quantity, category_id, variant_is_active } = req.body;
+      const { name, base_price, sku, color, size, stock_quantity, category_id, variant_is_active, characteristics } = req.body;
       const priceNum = Number(base_price);
       if (!name || base_price === undefined || base_price === null || base_price === '' || Number.isNaN(priceNum) || priceNum < 0 || !sku) {
         return res.status(400).json({ error: 'name, base_price (≥0) e sku são obrigatórios' });
@@ -40,6 +40,7 @@ class ProductController {
         stock_quantity: stockNum,
         category_id: category_id ?? null,
         variant_is_active,
+        characteristics: characteristics != null && String(characteristics).trim() !== '' ? String(characteristics) : null,
       });
       res.status(201).json(product);
     } catch (error) {

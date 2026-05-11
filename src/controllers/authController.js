@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+require('../config/env');
 
 class AuthController {
   async login(req, res) {

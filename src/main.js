@@ -1,4 +1,26 @@
-require('dotenv').config();
+require('./config/env');
+const { ENV_PATH } = require('./config/env');
+
+(function logStripeKeyMode() {
+  const raw = process.env.STRIPE_SECRET_KEY;
+  const k = typeof raw === 'string' ? raw.trim() : '';
+  if (!k) {
+    console.warn('[stripe] STRIPE_SECRET_KEY ausente — Checkout Stripe inactivo.');
+    console.warn(`[stripe] Caminho esperado do .env: ${ENV_PATH}`);
+    return;
+  }
+  let mode = 'prefixo inválido (esperado sk_test_ ou sk_live_)';
+  if (k.startsWith('sk_live_')) mode = 'LIVE — produção (cs_live_… nas URLs de checkout)';
+  else if (k.startsWith('sk_test_')) mode = 'TEST — sandbox (cs_test_… nas URLs de checkout)';
+  console.log(`[stripe] ${mode}`);
+  console.log(`[stripe] .env usado: ${ENV_PATH}`);
+  if (k.startsWith('sk_test_')) {
+    console.warn(
+      '[stripe] Modo TEST: se queres LIVE, confirma sk_live_ em hrstore-backend/.env, faz deploy deste código '
+      + '(override do .env activo) e remove STRIPE_SECRET_KEY antigo de PM2/systemd/Docker se ainda existir.',
+    );
+  }
+})();
 
 const express = require('express');
 const cors = require('cors');

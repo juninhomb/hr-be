@@ -48,12 +48,14 @@ class CategoryService {
       throw httpError(400, 'O nome da categoria é obrigatório.');
     }
     const cleanSort = Number.isFinite(Number(sort_order)) ? Number(sort_order) : 100;
+    const slugBase = slugifyCategoryName(cleanName);
+    const slug = await allocateUniqueCategorySlug(slugBase);
     try {
       const { rows } = await db.query(
-        `INSERT INTO categories (name, description, sort_order)
-         VALUES ($1, $2, $3)
+        `INSERT INTO categories (name, description, sort_order, slug)
+         VALUES ($1, $2, $3, $4)
          RETURNING id, name, description, image_url, sort_order, 0::int AS product_count`,
-        [cleanName, description?.trim() || null, cleanSort]
+        [cleanName, description?.trim() || null, cleanSort, slug]
       );
       return rows[0];
     } catch (e) {
@@ -74,6 +76,12 @@ class CategoryService {
       if (!cleanName) throw httpError(400, 'O nome da categoria não pode ficar vazio.');
       params.push(cleanName);
       fields.push(`name = $${params.length}`);
+      const newSlug = await allocateUniqueCategorySlug(
+        slugifyCategoryName(cleanName),
+        categoryId,
+      );
+      params.push(newSlug);
+      fields.push(`slug = $${params.length}`);
     }
     if (payload.description !== undefined) {
       params.push(payload.description?.trim() || null);
@@ -186,6 +194,39 @@ function safeDeleteCategoryImage(publicUrl) {
   } catch (e) {
     console.warn(`⚠️  Falha ao apagar imagem de categoria ${publicUrl}:`, e.message);
   }
+}
+
+function slugifyCategoryName(name) {
+  const s = String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  return s || 'categoria';
+}
+
+async function allocateUniqueCategorySlug(base, excludeId = null) {
+  /** @type {number|null} */
+  const ex =
+    excludeId != null && Number.isFinite(Number(excludeId)) ? Number(excludeId) : null;
+  let n = 0;
+  while (n < 500) {
+    const trySlug = n === 0 ? base : `${base}-${n}`;
+    const clauses = ['slug = $1'];
+    const params = [trySlug];
+    if (ex != null) {
+      params.push(ex);
+      clauses.push(`id <> $${params.length}`);
+    }
+    const { rows } = await db.query(
+      `SELECT 1 FROM categories WHERE ${clauses.join(' AND ')} LIMIT 1`,
+      params,
+    );
+    if (!rows.length) return trySlug;
+    n += 1;
+  }
+  throw httpError(500, 'Não foi possível gerar um slug único para a categoria.');
 }
 
 function httpError(status, message) {

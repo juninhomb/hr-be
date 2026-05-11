@@ -293,10 +293,20 @@ async function applyCheckoutSessionCompleted(session, options = {}) {
 
   const sessionId = String(session.id).trim();
 
+  /**
+   * Pedidos WhatsApp criam-se com `mb_way_ou_transferencia` (cliente escolhe MB Way, IBAN ou link
+   * Stripe depois). O webhook só fazia fallback com `payment_method = 'stripe'`, pelo que o
+   * pagamento via Payment Link nunca actualizava o pedido. Aceitamos ambos; após pagamento na
+   * Stripe gravamos `payment_method = 'stripe'`.
+   */
+  const pendingForStripeWebhookCond =
+    "LOWER(TRIM(COALESCE(payment_method, ''))) IN ('stripe', 'mb_way_ou_transferencia')";
+
   let res = await db.query(
     `
     UPDATE orders
-       SET status = 'pago'
+       SET status = 'pago',
+           payment_method = 'stripe'
      WHERE id = $1
        AND TRIM(COALESCE(stripe_link_id, '')) = $2
        AND status = 'aguardando_pagamento'
@@ -319,12 +329,12 @@ async function applyCheckoutSessionCompleted(session, options = {}) {
       FROM orders
      WHERE id = $1
        AND status = 'aguardando_pagamento'
-       AND LOWER(TRIM(COALESCE(payment_method, ''))) = 'stripe'
+       AND ${pendingForStripeWebhookCond}
     `,
     [orderId],
   );
   if (!pending[0]) {
-    console.warn('[stripe webhook] marcar pago: sem pedido stripe pendente', {
+    console.warn('[stripe webhook] marcar pago: sem pedido pendente (stripe / whatsapp opções)', {
       order_id: orderId,
       session_id: sessionId,
     });
@@ -361,13 +371,15 @@ async function applyCheckoutSessionCompleted(session, options = {}) {
   res = await db.query(
     `
     UPDATE orders
-       SET status = 'pago'
+       SET status = 'pago',
+           payment_method = 'stripe',
+           stripe_link_id = $2
      WHERE id = $1
        AND status = 'aguardando_pagamento'
-       AND LOWER(TRIM(COALESCE(payment_method, ''))) = 'stripe'
+       AND ${pendingForStripeWebhookCond}
      RETURNING id
     `,
-    [orderId],
+    [orderId, sessionId],
   );
 
   if (res.rowCount > 0) {

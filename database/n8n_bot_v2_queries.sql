@@ -194,6 +194,12 @@ ORDER BY c.name ASC, p.name ASC, pv.sku ASC;
 -- TOOL E — REGISTAR PEDIDO pelo WhatsApp (transacção única recomendada)
 -- Sub-workflow: Registrar_Pedido_IA
 --
+-- WhatsApp sem duplicados por formato: aplica migração
+-- `migrations/2026-05-07_hrstore_whatsapp_canonical_function.sql` e usa sempre
+-- `hrstore_whatsapp_canonical(...)` no INSERT. Unifica +351, espaços, 00,
+-- e móvel PT a 9 dígitos (9xxxxxxxx → 3519xxxxxxxx). Erros de digitação no
+-- meio do número (ex.: 562 vs 526) continuam a ser dois clientes distintos.
+--
 -- Correcções face à query antiga:
 --   • payment_method = 'mb_way_ou_transferencia' (igual ao site; ver nota abaixo).
 --   • orders.total_amount = valor_total_pecas + shipping_fee (alinhado ao site;
@@ -218,6 +224,11 @@ ORDER BY c.name ASC, p.name ASC, pv.sku ASC;
 --
 -- payment_method — idêntico ao checkout manual hrstore-site (POST /orders):
 --       'mb_way_ou_transferencia'  ·  Stripe: 'stripe'
+--
+-- Pagamento via Payment Link (n8n → Stripe): ao criar o link, incluir metadata com a chave
+-- `order_id` igual ao `id` do pedido (ex.: metadata[order_id]=152). Essa metadata é copiada
+-- para o Checkout.Session; o webhook `checkout.session.completed` usa-a para marcar o pedido
+-- como `pago` e `payment_method = 'stripe'`.
 -- ---------------------------------------------------------------------------
 BEGIN;
 
@@ -225,21 +236,21 @@ INSERT INTO customers (
   whatsapp_number, full_name, email, address, postal_code, city, country
 )
 VALUES (
-  '{{ $json.whatsapp_number }}',
-  '{{ $json.nome_cliente }}',
-  '{{ $json.email }}',
-  '{{ $json.morada }}',
-  '{{ $json.codigo_postal }}',
-  '{{ $json.cidade }}',
+  hrstore_whatsapp_canonical('{{ $json.whatsapp_digits || $json.whatsapp_number }}'),
+  NULLIF(TRIM('{{ $json.nome_cliente }}'), ''),
+  NULLIF(TRIM('{{ $json.email }}'), ''),
+  NULLIF(TRIM('{{ $json.morada }}'), ''),
+  NULLIF(TRIM('{{ $json.codigo_postal }}'), ''),
+  NULLIF(TRIM('{{ $json.cidade }}'), ''),
   'PT'
 )
 ON CONFLICT (whatsapp_number) DO UPDATE
-  SET full_name   = COALESCE(NULLIF(EXCLUDED.full_name, ''),   customers.full_name),
-      email       = COALESCE(NULLIF(EXCLUDED.email, ''),       customers.email),
-      address     = COALESCE(NULLIF(EXCLUDED.address, ''),     customers.address),
-      postal_code = COALESCE(NULLIF(EXCLUDED.postal_code, ''), customers.postal_code),
-      city        = COALESCE(NULLIF(EXCLUDED.city, ''),        customers.city),
-      country     = COALESCE(NULLIF(EXCLUDED.country, ''),     customers.country);
+  SET full_name   = COALESCE(NULLIF(TRIM(EXCLUDED.full_name), ''),   customers.full_name),
+      email       = COALESCE(NULLIF(TRIM(EXCLUDED.email), ''),       customers.email),
+      address     = COALESCE(NULLIF(TRIM(EXCLUDED.address), ''),     customers.address),
+      postal_code = COALESCE(NULLIF(TRIM(EXCLUDED.postal_code), ''), customers.postal_code),
+      city        = COALESCE(NULLIF(TRIM(EXCLUDED.city), ''),        customers.city),
+      country     = COALESCE(NULLIF(TRIM(EXCLUDED.country), ''),     customers.country);
 
 WITH stock_reservado AS (
   UPDATE product_variants pv
@@ -263,7 +274,7 @@ novo_pedido AS (
     {{ $json.is_delivery }},
     COALESCE({{ $json.shipping_fee }}::numeric, 0)
   FROM customers c
-  WHERE c.whatsapp_number = '{{ $json.whatsapp_number }}'
+  WHERE c.whatsapp_number = hrstore_whatsapp_canonical('{{ $json.whatsapp_digits || $json.whatsapp_number }}')
     AND EXISTS (SELECT 1 FROM stock_reservado)
   RETURNING id
 )
@@ -298,4 +309,43 @@ COMMIT;
 --    'mb_way_ou_transferencia', 'aguardando_pagamento', 'whatsapp', true, 5
 --
 -- Mantém igual o unit_price apenas com valor_total_pecas / quantidade.
+
+-- -----------------------------------------------------------------------------
+-- VARIANTE CTE — mesmo fluxo com upsert_customer materializado (sub-workflows)
+-- Requer função hrstore_whatsapp_canonical (migração 2026-05-07).
+-- -----------------------------------------------------------------------------
+-- WITH upsert_customer AS (
+--   INSERT INTO customers (
+--     whatsapp_number, full_name, email, address, postal_code, city, country
+--   )
+--   VALUES (
+--     hrstore_whatsapp_canonical('{{ $json.whatsapp_digits || $json.whatsapp_number }}'),
+--     NULLIF(TRIM('{{ $json.nome_cliente }}'), ''),
+--     NULLIF(TRIM('{{ $json.email }}'), ''),
+--     NULLIF(TRIM('{{ $json.morada }}'), ''),
+--     NULLIF(TRIM('{{ $json.codigo_postal }}'), ''),
+--     NULLIF(TRIM('{{ $json.cidade }}'), ''),
+--     'PT'
+--   )
+--   ON CONFLICT (whatsapp_number) DO UPDATE
+--     SET full_name   = COALESCE(NULLIF(TRIM(EXCLUDED.full_name), ''),   customers.full_name),
+--         email       = COALESCE(NULLIF(TRIM(EXCLUDED.email), ''),       customers.email),
+--         address     = COALESCE(NULLIF(TRIM(EXCLUDED.address), ''),     customers.address),
+--         postal_code = COALESCE(NULLIF(TRIM(EXCLUDED.postal_code), ''), customers.postal_code),
+--         city        = COALESCE(NULLIF(TRIM(EXCLUDED.city), ''),        customers.city),
+--         country     = COALESCE(NULLIF(TRIM(EXCLUDED.country), ''),     customers.country)
+--   RETURNING id
+-- ),
+-- stock_reservado AS ( ... ),
+-- novo_pedido AS (
+--   INSERT INTO orders (...)
+--   SELECT c.id, ... FROM upsert_customer c
+--   WHERE EXISTS (SELECT 1 FROM stock_reservado)
+--   RETURNING id
+-- ),
+-- inserir_itens AS ( ... )
+-- SELECT order_id FROM inserir_itens
+-- UNION ALL
+-- SELECT NULL::integer AS order_id WHERE NOT EXISTS (SELECT 1 FROM inserir_itens);
+
 -- ============================================================================

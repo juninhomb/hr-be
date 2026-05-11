@@ -64,7 +64,7 @@ class PublicService {
       if (search) {
         params.push(`%${search}%`);
         where.push(
-          `(p.name ILIKE $${params.length} OR v.sku ILIKE $${params.length} OR v.color ILIKE $${params.length})`,
+          `(p.name ILIKE $${params.length} OR v.sku ILIKE $${params.length} OR COALESCE(cc.name, v.color) ILIKE $${params.length})`,
         );
       }
       if (categoryId) {
@@ -90,12 +90,13 @@ class PublicService {
         c.name            AS category_name,
         v.id              AS variant_id,
         v.sku,
-        v.color,
+        COALESCE(cc.name, v.color) AS color,
         v.size,
         v.stock_quantity,
         v.image_url       AS variant_image_url
       FROM products p
       LEFT JOIN product_variants v ON v.product_id = p.id${frag.joinVActive}
+      LEFT JOIN catalog_colors cc ON cc.id = v.color_id
       LEFT JOIN categories c ON c.id = p.category_id
       WHERE ${where.join(' AND ')}
       ORDER BY p.is_featured DESC, p.name ASC, v.id ASC
@@ -139,12 +140,13 @@ class PublicService {
         c.name            AS category_name,
         v.id              AS variant_id,
         v.sku,
-        v.color,
+        COALESCE(cc.name, v.color) AS color,
         v.size,
         v.stock_quantity,
         v.image_url       AS variant_image_url
       FROM products p
       LEFT JOIN product_variants v ON v.product_id = p.id${frag.joinVActive}
+      LEFT JOIN catalog_colors cc ON cc.id = v.color_id
       LEFT JOIN categories c ON c.id = p.category_id
       WHERE p.id = $1 AND ${frag.sqlCatalogProductBasics()}
       ORDER BY v.id ASC
@@ -786,7 +788,10 @@ function groupProductRows(rows) {
         stock_quantity: stock,
         // Imagem específica desta variante (override). Cliente faz fallback
         // para `product.image_placeholder_url` quando esta vier null.
-        image_url: r.variant_image_url || null,
+        image_url:
+          r.variant_image_url != null && String(r.variant_image_url).trim() !== ''
+            ? String(r.variant_image_url).trim()
+            : null,
       });
       p.total_stock += stock;
       if (r.color) p.colors.add(r.color);

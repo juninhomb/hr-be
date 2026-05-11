@@ -693,18 +693,66 @@ class OrderService {
   }
 
   // -------------------------------------------------------------
-  // Marcar pedido como ENVIADO (placeholder CTT)
-  //   Apenas pedidos 'pago' podem ser enviados.
+  // Expedição: impressão / recibo — pago + entrega → expedido
+  // Idempotente se já estiver em expedido.
+  // -------------------------------------------------------------
+  async markAsExpedited(orderId) {
+    const id = parseInt(orderId, 10);
+    if (!Number.isFinite(id)) throw new Error('ID inválido.');
+
+    const { rows: up } = await db.query(
+      `
+      UPDATE orders
+         SET status = 'expedido'
+       WHERE id = $1
+         AND COALESCE(is_delivery, false) = true
+         AND status = 'pago'
+       RETURNING id`,
+      [id],
+    );
+    if (up[0]) {
+      await LogService.register('system', 'order_marked_expedited', { orderId: id });
+      return { success: true, orderId: id, status: 'expedido', already: false };
+    }
+
+    const { rows: cur } = await db.query(
+      `SELECT id, status, COALESCE(is_delivery, false) AS is_delivery FROM orders WHERE id = $1`,
+      [id],
+    );
+    if (!cur[0]) throw new Error('Pedido não encontrado.');
+    if (!cur[0].is_delivery) {
+      throw new Error('Só pedidos com entrega ao domicílio podem ser marcados como expedidos.');
+    }
+    if (String(cur[0].status) === 'expedido') {
+      return { success: true, orderId: id, status: 'expedido', already: true };
+    }
+    if (String(cur[0].status) === 'enviado' || String(cur[0].status) === 'entregue') {
+      throw new Error('Este pedido já foi enviado ou entregue.');
+    }
+    throw new Error(
+      'Só pedidos pagos podem ser expedidos (imprimir). O estado actual não permite esta acção.',
+    );
+  }
+
+  // -------------------------------------------------------------
+  // Marcar como ENVIADO (CTT) — apenas após expedido.
   // -------------------------------------------------------------
   async markAsShipped(orderId, trackingCode = null) {
     const { rows } = await db.query(
       `UPDATE orders SET status = 'enviado'
-        WHERE id = $1 AND status = 'pago'
+        WHERE id = $1
+          AND status = 'expedido'
+          AND COALESCE(is_delivery, false) = true
         RETURNING id`,
-      [orderId]
+      [orderId],
     );
-    if (!rows[0]) throw new Error('Apenas pedidos pagos podem ser enviados.');
+    if (!rows[0]) {
+      throw new Error(
+        'Marca primeiro «Expedir pedido» (estado Expedido). Só depois podes registar o envio via CTT.',
+      );
+    }
     await LogService.register('system', 'order_shipped_ctt', { orderId, trackingCode });
+    emailService.scheduleNotifyOrderShipped(orderId);
     return { success: true, orderId, trackingCode };
   }
 
@@ -867,7 +915,7 @@ class OrderService {
       }
       const order = orderRes.rows[0];
       const stockWasDeducted = order.status !== 'cancelado';
-      const wasPaid = ['pago', 'enviado', 'entregue'].includes(order.status);
+      const wasPaid = ['pago', 'expedido', 'enviado', 'entregue'].includes(order.status);
 
       if (stockWasDeducted) {
         const { rows: items } = await client.query(

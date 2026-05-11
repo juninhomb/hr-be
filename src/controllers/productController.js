@@ -25,7 +25,9 @@ class ProductController {
 
   async create(req, res, next) {
     try {
-      const { name, base_price, sku, color, size, stock_quantity, category_id, variant_is_active, characteristics } = req.body;
+      const {
+        name, base_price, sku, color, color_id, size, stock_quantity, category_id, variant_is_active, characteristics,
+      } = req.body;
       const priceNum = Number(base_price);
       if (!name || base_price === undefined || base_price === null || base_price === '' || Number.isNaN(priceNum) || priceNum < 0 || !sku) {
         return res.status(400).json({ error: 'name, base_price (≥0) e sku são obrigatórios' });
@@ -35,6 +37,7 @@ class ProductController {
         name: name.trim(),
         base_price: priceNum,
         sku: sku.trim().toUpperCase(),
+        color_id: color_id ?? null,
         color: color?.trim() || null,
         size: size?.trim() || null,
         stock_quantity: stockNum,
@@ -47,6 +50,9 @@ class ProductController {
       if (error.code === '23505') {
         return res.status(409).json({ error: 'SKU já existe' });
       }
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
       next(error);
     }
   }
@@ -55,11 +61,12 @@ class ProductController {
     try {
       const productId = parseInt(req.params.productId, 10);
       if (!productId) return res.status(400).json({ error: 'productId inválido' });
-      const { sku, color, size, stock_quantity, is_active } = req.body;
+      const { sku, color, color_id, size, stock_quantity, is_active } = req.body;
       if (!sku) return res.status(400).json({ error: 'sku é obrigatório' });
       const stockNum = Number.isFinite(Number(stock_quantity)) ? Number(stock_quantity) : 0;
       const variant = await ProductService.addVariantToProduct(productId, {
         sku: sku.trim().toUpperCase(),
+        color_id: color_id ?? null,
         color: color?.trim() || null,
         size: size?.trim() || null,
         stock_quantity: stockNum,
@@ -71,6 +78,9 @@ class ProductController {
       if (error.code === '23505') {
         return res.status(409).json({ error: 'SKU já existe' });
       }
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
       next(error);
     }
   }
@@ -81,7 +91,12 @@ class ProductController {
       const product = await ProductService.updateProduct(sku, req.body);
       if (!product) return res.status(404).json({ error: 'Produto não encontrado' });
       res.json(product);
-    } catch (error) { next(error); }
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      next(error);
+    }
   }
 
   /**

@@ -7,18 +7,18 @@ class DashboardService {
       SELECT
         (SELECT COUNT(*)::int FROM orders
           WHERE created_at >= CURRENT_DATE
-            AND status IN ('pago','enviado','entregue')) AS orders_paid_today,
+            AND status IN ('pago','expedido','enviado','entregue')) AS orders_paid_today,
         (SELECT COUNT(*)::int FROM orders WHERE created_at >= CURRENT_DATE) AS orders_placed_today,
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders
-          WHERE status = 'pago' AND created_at >= CURRENT_DATE) AS revenue_today,
+          WHERE status IN ('pago','expedido','enviado','entregue') AND created_at >= CURRENT_DATE) AS revenue_today,
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders
-          WHERE status IN ('pago','enviado','entregue')
+          WHERE status IN ('pago','expedido','enviado','entregue')
             AND created_at >= CURRENT_DATE - INTERVAL '7 days') AS revenue_7d,
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders
-          WHERE status IN ('pago','enviado','entregue')
+          WHERE status IN ('pago','expedido','enviado','entregue')
             AND created_at >= CURRENT_DATE - INTERVAL '30 days') AS revenue_30d,
         (SELECT COUNT(*)::int FROM product_variants
           WHERE stock_quantity BETWEEN 1 AND 5) AS low_stock_count,
@@ -26,9 +26,9 @@ class DashboardService {
         (SELECT COUNT(*)::int FROM customers) AS total_customers,
         (SELECT COUNT(*)::int FROM orders WHERE status = 'aguardando_pagamento') AS pending_count,
         (SELECT COUNT(*)::int FROM orders
-          WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_count,
+          WHERE status IN ('pago', 'expedido') AND COALESCE(is_delivery, false) = true) AS to_ship_count,
         (SELECT COALESCE(SUM(total_amount), 0)::float FROM orders
-          WHERE status = 'pago' AND origin = 'whatsapp') AS to_ship_value,
+          WHERE status IN ('pago', 'expedido') AND COALESCE(is_delivery, false) = true) AS to_ship_value,
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders WHERE status = 'aguardando_pagamento') AS pending_value,
         (SELECT COALESCE(SUM(stock_quantity), 0)::int FROM product_variants) AS total_stock,
@@ -57,7 +57,7 @@ class DashboardService {
       FROM dias d
       LEFT JOIN orders o
         ON o.created_at::date = d.dia
-       AND o.status IN ('pago', 'enviado', 'entregue')
+       AND o.status IN ('pago', 'expedido', 'enviado', 'entregue')
       GROUP BY d.dia
       ORDER BY d.dia ASC
     `;
@@ -69,7 +69,7 @@ class DashboardService {
         COALESCE(SUM(oi.quantity), 0)::int AS qty_sold,
         COALESCE(SUM(oi.quantity * oi.unit_price), 0)::float AS revenue
       FROM order_items oi
-      JOIN orders o ON o.id = oi.order_id AND o.status IN ('pago','enviado','entregue')
+      JOIN orders o ON o.id = oi.order_id AND o.status IN ('pago','expedido','enviado','entregue')
       LEFT JOIN product_variants v ON v.id = oi.variant_id OR v.sku = oi.sku
       LEFT JOIN products p ON p.id = v.product_id
       WHERE p.name IS NOT NULL
@@ -85,7 +85,7 @@ class DashboardService {
         COUNT(*)::int AS count,
         COALESCE(SUM(total_amount), 0)::float AS revenue
       FROM orders
-      WHERE status IN ('pago','enviado','entregue')
+      WHERE status IN ('pago','expedido','enviado','entregue')
       GROUP BY origin
       ORDER BY revenue DESC
     `;
@@ -119,7 +119,7 @@ class DashboardService {
              COALESCE(SUM(o.total_amount), 0)::float AS total_spent
       FROM customers c
       JOIN orders o ON o.customer_id = c.id
-        AND o.status IN ('pago','enviado','entregue')
+        AND o.status IN ('pago','expedido','enviado','entregue')
       GROUP BY c.id, c.full_name, c.whatsapp_number
       ORDER BY total_spent DESC
       LIMIT 5

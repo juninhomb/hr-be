@@ -62,7 +62,21 @@ class OrderController {
       const result = await OrderService.markAsShipped(id, trackingCode);
       res.json(result);
     } catch (error) {
-      if (error.message?.match(/pedido|pago/i)) {
+      if (error.message?.match(/pedido|expedido|CTT|envio/i)) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  async markExpedited(req, res, next) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+      const result = await OrderService.markAsExpedited(id);
+      res.json(result);
+    } catch (error) {
+      if (error.message?.match(/pedido|entrega|expedido|pago|enviado/i)) {
         return res.status(400).json({ error: error.message });
       }
       next(error);

@@ -3,6 +3,7 @@ const { OAuth2Client } = require('google-auth-library');
 const db = require('../config/db');
 const orderPaymentConfirmed = require('../templates/email/orderPaymentConfirmed');
 const orderPickupReady = require('../templates/email/orderPickupReady');
+const orderShipped = require('../templates/email/orderShipped');
 
 /** Token OAuth para SMTP Gmail / Google Workspace — cache em memória (processo). */
 let cachedAccess = { token: null, expiryMs: 0 };
@@ -330,16 +331,84 @@ async function notifyOrderPaymentConfirmedById(orderId) {
   }
 }
 
+async function notifyOrderShippedById(orderId) {
+  if (!mailSendingEnabled() || !isMailConfigured()) {
+    return { sent: false, reason: mailSendingEnabled() ? 'not_configured' : 'disabled' };
+  }
+
+  try {
+    const data = await fetchOrderForPaymentEmail(orderId);
+    if (!data) return { sent: false, reason: 'order_not_found' };
+    if (data._skipReason === 'no_customer_email') {
+      console.warn('[email] order_shipped: sem email de cliente → omitido', { orderId });
+      return { sent: false, reason: 'no_customer_email' };
+    }
+
+    const { subject, text, html } = orderShipped.build({
+      orderId: data.orderId,
+      customerName: data.full_name,
+      totalAmount: data.total_amount,
+      shippingFee: data.shipping_fee,
+      isDelivery: data.is_delivery,
+      items: data.items,
+    });
+
+    await sendMail({ to: data.email, subject, text, html });
+    console.log('[email] order_shipped enviado', { orderId: data.orderId, to: data.email });
+    return { sent: true, orderId: data.orderId };
+  } catch (err) {
+    console.error('[email] order_shipped falhou', orderId, err?.message || err);
+    throw err;
+  }
+}
+
 /**
  * Chamadas após transacções DB bem-sucedidas: não deve bloquear a resposta nem falhar o fluxo.
  */
 function scheduleNotifyOrderPaymentConfirmed(orderId) {
   const id = parseInt(orderId, 10);
   if (!Number.isFinite(id)) return;
-  if (!mailSendingEnabled() || !isMailConfigured()) return;
+  if (!mailSendingEnabled()) {
+    console.warn('[email] payment_confirmed: agendamento IGNORADO — MAIL_SENDING_ENABLED desligado', { orderId: id });
+    return;
+  }
+  if (!isMailConfigured()) {
+    console.warn(
+      '[email] payment_confirmed: agendamento IGNORADO — e-mail não configurado',
+      { orderId: id, missing: missingMailEnvKeys() },
+    );
+    return;
+  }
 
   setImmediate(() => {
-    notifyOrderPaymentConfirmedById(id).catch(() => {});
+    notifyOrderPaymentConfirmedById(id).catch((err) => {
+      console.error('[email] payment_confirmed (assíncrono) falhou', id, err?.message || err);
+    });
+  });
+}
+
+/**
+ * Após marcar envio CTT (estado enviado).
+ */
+function scheduleNotifyOrderShipped(orderId) {
+  const id = parseInt(orderId, 10);
+  if (!Number.isFinite(id)) return;
+  if (!mailSendingEnabled()) {
+    console.warn('[email] order_shipped: agendamento IGNORADO — MAIL_SENDING_ENABLED desligado', { orderId: id });
+    return;
+  }
+  if (!isMailConfigured()) {
+    console.warn(
+      '[email] order_shipped: agendamento IGNORADO — e-mail não configurado',
+      { orderId: id, missing: missingMailEnvKeys() },
+    );
+    return;
+  }
+
+  setImmediate(() => {
+    notifyOrderShippedById(id).catch((err) => {
+      console.error('[email] order_shipped (assíncrono) falhou', id, err?.message || err);
+    });
   });
 }
 
@@ -368,6 +437,8 @@ module.exports = {
   sendMail,
   notifyOrderPaymentConfirmedById,
   notifyOrderPickupReadyById,
+  notifyOrderShippedById,
   scheduleNotifyOrderPaymentConfirmed,
+  scheduleNotifyOrderShipped,
   sendTestMail,
 };

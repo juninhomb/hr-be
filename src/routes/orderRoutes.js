@@ -11,6 +11,7 @@ const DashboardController = require('../controllers/dashboardController');
 const ShippingController = require('../controllers/shippingController');
 const MailController = require('../controllers/mailController');
 const DiscountCouponController = require('../controllers/discountCouponController');
+const ColorController = require('../controllers/colorController');
 
 const authMiddleware = require('../config/authMiddleware');
 const { upload } = require('../config/upload');
@@ -61,6 +62,12 @@ router.post(
 );
 router.delete('/categories/:categoryId/image', CategoryController.removeImage);
 
+// Cores canónicas (catálogo — inventário / site)
+router.get('/colors', ColorController.list);
+router.post('/colors', ColorController.create);
+router.put('/colors/:id', ColorController.update);
+router.delete('/colors/:id', ColorController.destroy);
+
 // Upload / remover imagem do produto-base (fallback partilhado)
 // (multipart/form-data, field "image")
 router.post(
@@ -107,6 +114,7 @@ router.get('/:id', OrderController.show);
 router.post('/:id/cancel', OrderController.cancel);
 router.post('/:id/pickup-ready', OrderController.notifyPickupReady);
 router.post('/:id/pickup-collected', OrderController.markPickupCollected);
+router.post('/:id/mark-expedido', OrderController.markExpedited);
 router.post('/:id/ship', OrderController.ship);
 router.patch('/:id/shipping-fee', OrderController.updateShippingFee);
 router.delete('/:id', OrderController.destroy);

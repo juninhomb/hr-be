@@ -21,7 +21,7 @@ class CustomerService {
              COALESCE((
                SELECT COUNT(*)::int FROM orders o
                 WHERE o.customer_id = c.id
-                  AND o.status IN ('pago','enviado','entregue')
+                  AND o.status IN ('pago','expedido','enviado','entregue')
              ), 0) AS total_orders,
              (SELECT COUNT(*)::int FROM customer_addresses a WHERE a.customer_id = c.id) AS address_count
       FROM customers c
@@ -33,7 +33,7 @@ class CustomerService {
              COALESCE((
                SELECT COUNT(*)::int FROM orders o
                 WHERE o.customer_id = c.id
-                  AND o.status IN ('pago','enviado','entregue')
+                  AND o.status IN ('pago','expedido','enviado','entregue')
              ), 0) AS total_orders,
              (SELECT COUNT(*)::int FROM customer_addresses a WHERE a.customer_id = c.id) AS address_count
       FROM customers c
@@ -48,7 +48,7 @@ class CustomerService {
              COALESCE((
                SELECT COUNT(*)::int FROM orders o
                 WHERE o.customer_id = c.id
-                  AND o.status IN ('pago','enviado','entregue')
+                  AND o.status IN ('pago','expedido','enviado','entregue')
              ), 0) AS total_orders,
              0::int AS address_count
       FROM customers c
@@ -59,7 +59,7 @@ class CustomerService {
              COALESCE((
                SELECT COUNT(*)::int FROM orders o
                 WHERE o.customer_id = c.id
-                  AND o.status IN ('pago','enviado','entregue')
+                  AND o.status IN ('pago','expedido','enviado','entregue')
              ), 0) AS total_orders,
              0::int AS address_count
       FROM customers c
@@ -104,7 +104,7 @@ class CustomerService {
               COALESCE((
                 SELECT COUNT(*)::int FROM orders o
                  WHERE o.customer_id = c.id
-                   AND o.status IN ('pago','enviado','entregue')
+                   AND o.status IN ('pago','expedido','enviado','entregue')
               ), 0) AS total_orders
          FROM customers c
         WHERE c.whatsapp_number = $1`,

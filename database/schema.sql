@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS orders (
   
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
   
-  CHECK (status IN ('aguardando_pagamento', 'pago', 'enviado', 'entregue', 'cancelado'))
+  CHECK (status IN ('aguardando_pagamento', 'pago', 'expedido', 'enviado', 'entregue', 'cancelado'))
 );
 
 CREATE INDEX idx_orders_customer_id ON orders(customer_id);

@@ -2,6 +2,7 @@ const db = require('../config/db');
 const fs = require('fs');
 const path = require('path');
 const { UPLOAD_DIR, toPublicUrl } = require('../config/upload');
+const { resolveVariantColorForWrite } = require('./colorService');
 
 class ProductService {
   async getAllProducts(search = '') {
@@ -25,15 +26,18 @@ class ProductService {
           p.is_featured,
           v.image_url             AS variant_image,
           v.sku,
-          v.color,
+          COALESCE(cc.name, v.color) AS color,
+          v.color_id,
           v.size,
           v.stock_quantity        AS stock,
           ${variantSql} AS variant_is_active
         FROM product_variants v
         INNER JOIN products p ON v.product_id = p.id
         LEFT JOIN categories c ON c.id = p.category_id
+        LEFT JOIN catalog_colors cc ON cc.id = v.color_id
         WHERE v.sku ILIKE $1 
            OR p.name ILIKE $1
+           OR COALESCE(cc.name, v.color) ILIKE $1
         ORDER BY p.is_featured DESC, p.name ASC, v.sku ASC
       `;
 
@@ -102,23 +106,38 @@ class ProductService {
     return rows[0] || null;
   }
 
-  async addVariantToProduct(productId, { sku, color, size, stock_quantity = 0, is_active = true }) {
+  async addVariantToProduct(productId, payload) {
+    const { sku, color_id, color, size, stock_quantity = 0, is_active = true } = payload;
     const productRes = await db.query(`SELECT id, name, base_price FROM products WHERE id = $1`, [productId]);
     if (!productRes.rows[0]) return null;
     const variantActive = is_active === undefined || is_active === null ? true : Boolean(is_active);
 
-    const { rows } = await db.query(
-      `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [productId, sku, color || null, size || null, stock_quantity || 0, variantActive]
-    );
-    return { ...rows[0], name: productRes.rows[0].name, price: productRes.rows[0].base_price };
+    const client = await db.connect();
+    try {
+      const resolved = await resolveVariantColorForWrite(client, { color_id, color });
+      const { rows } = await client.query(
+        `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity, is_active, color_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
+        [
+          productId,
+          sku,
+          resolved.color,
+          size || null,
+          stock_quantity || 0,
+          variantActive,
+          resolved.color_id,
+        ],
+      );
+      return { ...rows[0], name: productRes.rows[0].name, price: productRes.rows[0].base_price };
+    } finally {
+      client.release();
+    }
   }
 
   async updateProduct(sku, data) {
     const {
-      stock_quantity, color, size, name, base_price, category_id,
+      stock_quantity, color, color_id, size, name, base_price, category_id,
       variant_is_active,
       characteristics,
     } = data;
@@ -177,22 +196,44 @@ class ProductService {
       const variantValue =
         variant_is_active === undefined ? null : Boolean(variant_is_active);
 
-      await client.query(
-        `UPDATE product_variants
-         SET stock_quantity = COALESCE($1, stock_quantity),
-             color = COALESCE($2, color),
-             size = COALESCE($3, size),
-             is_active = CASE WHEN $5::boolean THEN $6 ELSE is_active END
-         WHERE sku = $4`,
-        [
-          stock_quantity ?? null,
-          color ?? null,
-          size ?? null,
-          sku,
-          variantExplicit,
-          variantExplicit ? variantValue : null,
-        ],
-      );
+      const variantParamsNoColor = [
+        stock_quantity ?? null,
+        size ?? null,
+        sku,
+        variantExplicit,
+        variantExplicit ? variantValue : null,
+      ];
+
+      if (color !== undefined || color_id !== undefined) {
+        const resolved = await resolveVariantColorForWrite(client, { color_id, color });
+        await client.query(
+          `UPDATE product_variants
+           SET stock_quantity = COALESCE($1, stock_quantity),
+               color = $2,
+               color_id = $3,
+               size = COALESCE($4, size),
+               is_active = CASE WHEN $6::boolean THEN $7 ELSE is_active END
+           WHERE sku = $5`,
+          [
+            stock_quantity ?? null,
+            resolved.color,
+            resolved.color_id,
+            size ?? null,
+            sku,
+            variantExplicit,
+            variantExplicit ? variantValue : null,
+          ],
+        );
+      } else {
+        await client.query(
+          `UPDATE product_variants
+           SET stock_quantity = COALESCE($1, stock_quantity),
+               size = COALESCE($2, size),
+               is_active = CASE WHEN $4::boolean THEN $5 ELSE is_active END
+           WHERE sku = $3`,
+          variantParamsNoColor,
+        );
+      }
 
       await client.query('COMMIT');
       return { product_id: productId };
@@ -217,7 +258,7 @@ class ProductService {
 
   async createProduct(data) {
     const {
-      name, base_price, sku, color, size, stock_quantity = 0, category_id,
+      name, base_price, sku, color, color_id, size, stock_quantity = 0, category_id,
       variant_is_active: variantIsActive,
       characteristics: rawCharacteristics,
     } = data;
@@ -248,18 +289,21 @@ class ProductService {
       );
       const productId = productRes.rows[0].id;
 
+      const resolved = await resolveVariantColorForWrite(client, { color_id, color });
+
       const variantRes = await client.query(
-        `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO product_variants (product_id, sku, color, size, stock_quantity, is_active, color_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING *`,
         [
           productId,
           sku,
-          color,
+          resolved.color,
           size,
           stock_quantity,
           wantsVariant,
-        ]
+          resolved.color_id,
+        ],
       );
 
       await client.query('COMMIT');
@@ -560,7 +604,7 @@ class ProductService {
       try {
         await client.query('BEGIN');
         const cur = await client.query(
-          `SELECT v.id AS variant_id, v.product_id, v.stock_quantity, v.color, v.size, v.is_active,
+          `SELECT v.id AS variant_id, v.product_id, v.stock_quantity, v.color, v.color_id, v.size, v.is_active,
                   p.name, p.base_price, p.category_id, p.is_featured, p.characteristics
            FROM product_variants v
            INNER JOIN products p ON p.id = v.product_id
@@ -647,9 +691,31 @@ class ProductService {
         }
 
         let color = c.color;
+        let colorId = c.color_id;
         if ('color' in raw) {
           const t = String(raw.color ?? '').trim();
           color = t || null;
+          if (color) {
+            const cr = await client.query(
+              `SELECT id, name FROM catalog_colors
+                WHERE upper(trim(name)) = upper(trim($1))
+                LIMIT 1`,
+              [color],
+            );
+            if (!cr.rows[0]) {
+              await client.query('ROLLBACK');
+              summary.failed.push({
+                row: sheetRow,
+                sku,
+                reason: `Cor "${color}" não existe no catálogo (Configurações → Cores).`,
+              });
+              continue;
+            }
+            colorId = cr.rows[0].id;
+            color = cr.rows[0].name;
+          } else {
+            colorId = null;
+          }
         }
 
         let size = c.size;
@@ -699,8 +765,8 @@ class ProductService {
           [name, basePrice, categoryId, isFeatured, prodCharacteristics, c.product_id],
         );
         await client.query(
-          `UPDATE product_variants SET stock_quantity = $1, color = $2, size = $3, is_active = $4 WHERE sku = $5`,
-          [stockNum, color, size, isActive, sku],
+          `UPDATE product_variants SET stock_quantity = $1, color = $2, color_id = $5, size = $3, is_active = $4 WHERE sku = $6`,
+          [stockNum, color, size, isActive, colorId, sku],
         );
 
         await client.query('COMMIT');

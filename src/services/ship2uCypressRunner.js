@@ -3,7 +3,9 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const BACKEND_ROOT = path.resolve(__dirname, '..', '..');
-const CY_PROJECT_DIR = path.join(BACKEND_ROOT, 'cy');
+const CY_PROJECT_DIR = path.join(BACKEND_ROOT, 'cy-ship2u');
+/** Relativo à raiz do projecto Cypress (`cy-ship2u`). */
+const SHIP2U_CYPRESS_SPEC = 'cypress/e2e/ship2u.cy.js';
 
 const MAX_LOG_CAPTURE = 512 * 1024;
 const DEFAULT_TIMEOUT_MS = 600000;
@@ -49,6 +51,15 @@ function logsDir() {
   return path.join(BACKEND_ROOT, 'logs', 'ship2u-cypress');
 }
 
+/** Telefone só dígitos nacionais PT: remove todos os prefixos 351 consecutivos. */
+function phoneDigitsWithout351(phone) {
+  let d = String(phone ?? '').replace(/\D/g, '');
+  while (d.startsWith('351') && d.length > 9) {
+    d = d.slice(3);
+  }
+  return d;
+}
+
 /**
  * Executa `npx cypress run` e aguarda o fim do processo (sucesso = código 0).
  * Grava stdout+stderr num `.log` consultável no servidor (SSH).
@@ -56,7 +67,11 @@ function logsDir() {
  */
 function runAndWait(orderId, recipientPayload) {
   const tmp = path.join('/tmp', `ship2u-recipient-${orderId}-${Date.now()}.json`);
-  fs.writeFileSync(tmp, JSON.stringify(recipientPayload), { encoding: 'utf8', mode: 0o600 });
+  const payloadForCypress = {
+    ...recipientPayload,
+    phone: phoneDigitsWithout351(recipientPayload.phone),
+  };
+  fs.writeFileSync(tmp, JSON.stringify(payloadForCypress), { encoding: 'utf8', mode: 0o600 });
 
   const dir = logsDir();
   fs.mkdirSync(dir, { recursive: true });
@@ -67,7 +82,7 @@ function runAndWait(orderId, recipientPayload) {
     'cypress',
     'run',
     '--spec',
-    'cypress/e2e/ship2U.cy.js',
+    SHIP2U_CYPRESS_SPEC,
     '--env',
     `RECIPIENT_FILE=${tmp}`,
   ];

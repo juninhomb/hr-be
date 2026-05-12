@@ -1,0 +1,18 @@
+{
+  "name": "cy-ship2u",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:ship2u:dev": "cypress run --spec cypress/e2e/ship2u.cy.js --env SHIP2U_ALLOW_DEV_RECIPIENT=1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "cypress": "^14.5.4",
+    "cypress-real-events": "^1.15.0"
+  }
+}

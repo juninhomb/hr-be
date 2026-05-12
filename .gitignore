@@ -1,6 +1,19 @@
 # dependencies
 node_modules/
 
+cy/node_modules/
+cy/cypress/fixtures/
+cy/cypress/fixtures/login.json
+
+
+# Playwright scrape / artefacts
+playwright
+/playwright/trace/
+/playwright/ship2u-address-book-output.json
+test-results/
+
+
+
 # env / secrets
 .env
 .env.*

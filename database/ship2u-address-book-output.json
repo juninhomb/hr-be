@@ -1,0 +1,2383 @@
+{
+  "scrapedAt": "2026-05-12T12:11:44.012Z",
+  "listUrl": "/en/customer-account/destinatarios",
+  "pageLength": "500",
+  "dataTablesInfo": "339 records Viewing record 1 to 339",
+  "expectedTotal": 339,
+  "exportedCount": 339,
+  "clients": [
+    {
+      "ship2uRecipientId": "133888",
+      "nome": "JAMYLLE ALENCAR",
+      "morada": "RUA DE SAO JOSE, 7, 4740-359 FÃO (Portugal)",
+      "telemovel": "965692035",
+      "email": "jamlle89@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122626",
+      "nome": "SORAYA FERNANDES",
+      "morada": "AV DOS BOMBEIROS VOLUNTÁRIOS  250, 4580-053 PAREDES (Portugal)",
+      "telemovel": "962332364",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "95235",
+      "nome": "S2U",
+      "morada": "AVENIDA MESQUITA GAVIAO 351, 4730-806 VILA VERDE (Portugal)",
+      "telemovel": "913763156",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98564",
+      "nome": "TSIHARA MACEDO",
+      "morada": "RUA SETE DE FEVEREIRO, BLOCO C, C2 - 2 ANDAR, 2955-124 PINHAL NOVO (Portugal)",
+      "telemovel": "969272340",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "95749",
+      "nome": "SIMONE MEIRELES",
+      "morada": "RUA ALBERTO PIMENTA, 119 BLOCO C - R/C 01, 4470-005 MAIA (Portugal)",
+      "telemovel": "934896176",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98566",
+      "nome": "SUELEN LOPES PESSANHA",
+      "morada": "RUA CELESTINO FERREIRA MARTINS, 406, CAVE - OLIVEIRA DE FRALDES, VISEU, 3680-176 PINHEIRO OFR (Portugal)",
+      "telemovel": "922213824",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "100103",
+      "nome": "SIMONE CORREA DA SILVA BRANCHINI",
+      "morada": "AVENIDA EMIDIO NAVARRO 74 1 POSTERIOR, 3500-124 VISEU (Portugal)",
+      "telemovel": "915902867",
+      "email": "simonecsbranchini@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112903",
+      "nome": "MARCIA ANDRADE ALVES",
+      "morada": "RUA DOM JOAO DE CASTRO, 36, 7900-625 FERREIRA DO ALENTEJO (Portugal)",
+      "telemovel": "925244046",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "119559",
+      "nome": "CARLA BOTELHO",
+      "morada": "AVENIDA DO ESTADIO 151 BLOCO B 1 DIREITO, 4405-625 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "964195610",
+      "email": "cabotelho1980@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "107528",
+      "nome": "JOSIANE ROSSI PONTUAL SOUSA",
+      "morada": "RUA FERNANDO PESSOA, 8 R/C ESQUERDO, 2860-464 MOITA (Portugal)",
+      "telemovel": "936507656",
+      "email": "jorossips@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "124936",
+      "nome": "GIOVANA SILVA",
+      "morada": "RUA PAULO QUINTELA 252, APT 6F, 3030-393 COIMBRA (Portugal)",
+      "telemovel": "926371975",
+      "email": "giovanafreitassilva9@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122634",
+      "nome": "EVELYN BUARQUE",
+      "morada": "RUA CARLOS REIS 27 - 3 ANDAR, 1600-030 LISBOA (Portugal)",
+      "telemovel": "934046042",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "122635",
+      "nome": "JOSY SANTOS",
+      "morada": "RUA VICTOR DE SA 80 - RÉS DE CHÃO DRTO TRÁS, 4715-586 BRAGA (Portugal)",
+      "telemovel": "938199532",
+      "email": "josysantos1686@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "103948",
+      "nome": "SILVIA BARBOSA DINIZ MACHADO",
+      "morada": "RUA ALVARO DE CASTELÕES 688, 2 FRT, 4200-042 PORTO (Portugal)",
+      "telemovel": "939289538",
+      "email": "silviadiniz88@icloud.com"
+    },
+    {
+      "ship2uRecipientId": "124940",
+      "nome": "JESSICA RODRIGUES",
+      "morada": "RUA PROFESSOR EGAZ MONIZ, 35 R/C, 2625-657 VIALONGA (Portugal)",
+      "telemovel": "962341381",
+      "email": "jessicarodriguesadm94@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "124941",
+      "nome": "RAISSA MORAES",
+      "morada": "LARGO DE SÃO PEDRO 14 - HOSTELLICIOUS, 8000-145 FARO (Portugal)",
+      "telemovel": "965413964",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "103950",
+      "nome": "SABRINA BARBOSA DA SILVA",
+      "morada": "RUA DE CABANAS, 744.  3 ESQUERDO, 4510-506 FÂNZERES (Portugal)",
+      "telemovel": "931050695",
+      "email": "sabrinalapa28@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "133903",
+      "nome": "CAMILA CARDOSO",
+      "morada": "RUA JOSE ANTONIO SANDY 43 4 ESQUERDO FRENTE, 4900-425 VIANA DO CASTELO (Portugal)",
+      "telemovel": "927498128",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98575",
+      "nome": "DANIELLE FORTUNATO",
+      "morada": "RUA DO ARADO, LOTE G1, LOJA 07 - URBANIZAÇÃO VALE DA AZINHEIRA, 8200-389 ALBUFEIRA (Portugal)",
+      "telemovel": "966613392",
+      "email": "edcarlosdanielle@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100111",
+      "nome": "EVA MARIA YASMIN LOSS",
+      "morada": "QUINTA DO PINHEIRO LOTE 25 8A ESQ - COVILHA, 6300-552 GUARDA (Portugal)",
+      "telemovel": "910396858",
+      "email": "yasmineva969@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98576",
+      "nome": "ROSANA DE OLIVEIRA SAMPAIO",
+      "morada": "RUA ENG FREDERICO UIRICH 1482, 2 A - CASATELO DA MAIA, 4475-139 MAIA (Portugal)",
+      "telemovel": "962987782",
+      "email": "oliveirasampaior@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98577",
+      "nome": "KELIANE EXPEDITO DA SILVA",
+      "morada": "AVENIDA GENERAL NORTON DE MATOS, 259 - 1 ESQUERDO, 4935-138 VIANA DO CASTELO (Portugal)",
+      "telemovel": "936535300",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "100113",
+      "nome": "VANESSA QUINAN DE NORONHA",
+      "morada": "RUA FERREIRA LAPA 4 1D, 1150-157 LISBOA (Portugal)",
+      "telemovel": "914334901",
+      "email": "vane.quinan@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "116503",
+      "nome": "JHOYCE DE LIMA ALENCAR",
+      "morada": "RUA NADIR AFONSO, EDIFÍCIO CHAVES, BL1, 5 DIREITO, 5400-416 CHAVES (Portugal)",
+      "telemovel": "920367575",
+      "email": "jhoycealencar@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100121",
+      "nome": "PRISCILLA GLECE FREITAS MENEZES EXPEDITO",
+      "morada": "PRAÇA DAS FONTAINHAS 29 1 ESQ - SAO VICENTE, 4700-382 BRAGA (Portugal)",
+      "telemovel": "961400675",
+      "email": "priscillaglece@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "124953",
+      "nome": "NATALIA FERREIRA",
+      "morada": "TRAV DR CARLOS PIRES FELGUEIRAS N 12 - AP 5D, 4470-158 MAIA (Portugal)",
+      "telemovel": "912707251",
+      "email": "liamartins40@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98586",
+      "nome": "FERNANDA GUIMARÃES VEGA",
+      "morada": "RUA GENTIL FIGUEIRA DA SILVA GUEDES, 4/3D, 3100-505 POMBAL (Portugal)",
+      "telemovel": "925931847",
+      "email": "vega.fguimaraes@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112666",
+      "nome": "GABRIELLE GUEDES NUNES CAMARGO",
+      "morada": "RUA VAL FLORES, LOTE 21 - 2º ANDAR FRENTE, 4930-746 VALENÇA (Portugal)",
+      "telemovel": "915227612",
+      "email": "gabrielleguedes21@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "126234",
+      "nome": "JUCILEIA BENEDITO",
+      "morada": "RUA DOM MANOEL II FRAÇÃO 30 B LATERAL, 2560-016 A DOS CUNHADOS (Portugal)",
+      "telemovel": "964036789",
+      "email": "sra.jucileia@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101660",
+      "nome": "PATRÍCIA OLIVEIRA",
+      "morada": "RUA DOM ANTÔNIO BARROSO, 38, ÁGUAS SANTAS, 4425-058 MAIA (Portugal)",
+      "telemovel": "916648322",
+      "email": "palomagonssalves@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112668",
+      "nome": "LORRANY ALVES PEREIRA",
+      "morada": "RUA DO MURGEIRO, N1B - SOBREIRO, 2640-578 MAFRA (Portugal)",
+      "telemovel": "966346256",
+      "email": "lorranyap9@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100125",
+      "nome": "THAIS BERNARDO SCHOMER",
+      "morada": "RUA PADRE ANTONIO 25, 4470-136 MAIA (Portugal)",
+      "telemovel": "962858555",
+      "email": "thais.schomer@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "124957",
+      "nome": "HR SRTORE",
+      "morada": "RUA GENERAL TORRES 1220 - PISO -1 , LOJA 40, 4400-164 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98590",
+      "nome": "ALESSANDRA  MINDER CAVALCANTI TRAVESSOS",
+      "morada": "RUA PADRE ANTONIO VIEIRA, 120 - 9 ESQUERDO FRENTE, 4710-412 BRAGA (Portugal)",
+      "telemovel": "911013075",
+      "email": "aleminder@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "124958",
+      "nome": "THAMYRES FARIAS",
+      "morada": "JOÃO DE DEUS, N 6, SALA 404, 4100-456 PORTO (Portugal)",
+      "telemovel": "912586542",
+      "email": "thamyresfariasasv@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101663",
+      "nome": "KELLY SANTOS",
+      "morada": "RUA PROFESSOR MACHADO VILELA, 200, 4 EF, SÃO VICTOR, 4715-045 BRAGA (Portugal)",
+      "telemovel": "914386752",
+      "email": "kellylirio.santos@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "123168",
+      "nome": "SILVIA TATIANA PEREIRA MENDES",
+      "morada": "RUA FRANCISCO NICHOLSON, 3 - BLOCO B - ANDAR 7 FRACAO 2, 2790-264 CARNAXIDE (Portugal)",
+      "telemovel": "932536670",
+      "email": "andreiabyda@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "97826",
+      "nome": "PRISCILA MACHADO",
+      "morada": "RUA DAS TOMADAS, 16 - BRAGA, 4705-671 TADIM (Portugal)",
+      "telemovel": "910146793",
+      "email": "pri.multimidia@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100132",
+      "nome": "KAREN CARDOSO DE SOUZA CRUZ",
+      "morada": "RUA DOUTOR AVELINO PEREIRA DE CARVALHO - 99 - 3 DIREITO, 4830-552 PÓVOA DE LANHOSO (Portugal)",
+      "telemovel": "912271814",
+      "email": "karensud27@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "96037",
+      "nome": "ROSA ALINE SILVA PEREIRA",
+      "morada": "ESTRADA SÃO PEDRO, 303. BARREIRA, 2410-023 LEIRIA (Portugal)",
+      "telemovel": "927204169",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97829",
+      "nome": "CELILIA ORTEGA",
+      "morada": "TRAVESSA SÃO BERNARDINO, 19 - PREDIO 4, ANDAR 1, 1150-318 LISBOA (Portugal)",
+      "telemovel": "910815832",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98597",
+      "nome": "DANIELA",
+      "morada": "RUA JOAQUIM DA SILVA CRUZ, 95 - 1 DRTO FRENTE, 4460-146 GUIFÕES (Portugal)",
+      "telemovel": "999579318",
+      "email": "danielapeixoto26@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101669",
+      "nome": "BEATRIZ DE SOUZA DA SILVA FURTADO",
+      "morada": "AVENIDA INFANTE D. HENRIQUE 12,1 (EDIFICIO TRANSINSULAR), 9500-769 PONTA DELGADA (Portugal)",
+      "telemovel": "966743905",
+      "email": "beatriz.ssantiago@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98598",
+      "nome": "DANIELA",
+      "morada": "RUA JOAQUIM DA SILVA CRUZ, 95 - 1 DRTO FRENTE, 4460-146 GUIFÕES (Portugal)",
+      "telemovel": "999579318",
+      "email": "danielapeixoto26@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "119846",
+      "nome": "LARA DE FIGUEIREDO BARAUNA DA SILVA",
+      "morada": "URBANIZACAO DO LORETO - LOTE 10, 1 AF, 3025-037 COIMBRA (Portugal)",
+      "telemovel": "915232901",
+      "email": "larafigconsultoria@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "96039",
+      "nome": "AMANDA COTTA",
+      "morada": "RUA MARQUES DE SUBSERRA, N 11 PRIMEIRO DRTO, 1070-170 LISBOA (Portugal)",
+      "telemovel": "939985048",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97831",
+      "nome": "LORENA GOLDNER",
+      "morada": "RUA CORDEIRO FERREIRA, 14. APTO 4A - LUMIAR, 1750-072 LISBOA (Portugal)",
+      "telemovel": "910689980",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98600",
+      "nome": "DANIELA",
+      "morada": "RUA JOAQUIM DA SILVA CRUZ, 95 - 1 DRTO FRENTE, 4460-146 GUIFÕES (Portugal)",
+      "telemovel": "913308780",
+      "email": "danielapeixoto26@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "119848",
+      "nome": "ELIZANE SOUZA",
+      "morada": "RUA VENANCIO DA COSTA LIMA, 139, 2950-701 QUINTA DO ANJO (Portugal)",
+      "telemovel": "935895581",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97834",
+      "nome": "RENATA REIS AMORIM",
+      "morada": "RUA TEIXEIRA DE PASCOAIS, 442 - APTO 6A - AZUREM, 4800-073 GUIMARÃES (Portugal)",
+      "telemovel": "933516022",
+      "email": "reamorim1@hotimail.com"
+    },
+    {
+      "ship2uRecipientId": "112682",
+      "nome": "JHESSICA LORRANY NOGUEIRA",
+      "morada": "RUA LAURO GONÇALVES, 12 - APTO B4.1, 3440-385 SANTA COMBA DÃO (Portugal)",
+      "telemovel": "960225894",
+      "email": "jhessicalramorim@yahoo.com.br"
+    },
+    {
+      "ship2uRecipientId": "124971",
+      "nome": "THAMYRIS DOS SANTOS",
+      "morada": "AVENIDA DO BRASIL, 77  - 8C, 2735-673 AGUALVA-CACÉM (Portugal)",
+      "telemovel": "913633441",
+      "email": "thamy.vianna@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "96044",
+      "nome": "ANA PAULA VENTURA",
+      "morada": "RUA DO CABECINHO, 20 - OLIVEIRA DO HOSPITAL, COIMBRA, 3405-409 SEIXO DA BEIRA (Portugal)",
+      "telemovel": "926297500",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97836",
+      "nome": "FABIOLA OLIVEIRA DE SOUZA",
+      "morada": "PADRE MANUEL GUIMARÃES 5 - 1 ESDO - REAL DUME, 4700-284 BRAGA (Portugal)",
+      "telemovel": "936764830",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "105004",
+      "nome": "HR Store",
+      "morada": "RUA ESTADIO DO FUTEBOL CLUBE DE AVINTES 87, 4 ESQUERDO, 4430-826 AVINTES (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "112684",
+      "nome": "EDUCADORA INÊS BOAVENTURA",
+      "morada": "ESTRADA MUNICIPAL, 606 - ESCOLA BÁSICA DA IGREJA NOVA, 2640-338 IGREJA NOVA MFR (Portugal)",
+      "telemovel": "966949912",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98605",
+      "nome": "FERNANDA SILVA",
+      "morada": "RUA DO MARTIR SÃO SEBASTIÃO, 27, 2005-113 ALMOSTER STR (Portugal)",
+      "telemovel": "924393114",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "105005",
+      "nome": "VANESSA DE OLIVEIRA LARA",
+      "morada": "AV SÃO SILVESTRE N 21, 2 DIREITO, 3200-203 LOUSÃ (Portugal)",
+      "telemovel": "927190775",
+      "email": "vanessallara31@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100142",
+      "nome": "MAGDA REIS",
+      "morada": "RUA PROFESSOR NARCISO COSTA 19 - 2B - CAPUCHOS, 2400-195 LEIRIA (Portugal)",
+      "telemovel": "961172393",
+      "email": "dosreismagda6@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122926",
+      "nome": "MORGANA NUNES",
+      "morada": "RUA JOAO MARIA PORTO 8 - 6B - COLINAS DO CRUZEIRO, 2675-650 ODIVELAS (Portugal)",
+      "telemovel": "934466166",
+      "email": "morgananunes1@outlook.com"
+    },
+    {
+      "ship2uRecipientId": "95023",
+      "nome": "ERIKA PAIVA",
+      "morada": "RUA DAS LOUSAS, 885, 4440-578 VALONGO (Portugal)",
+      "telemovel": "910678777",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "105007",
+      "nome": "ANA BEATRIZ QUEIROZ",
+      "morada": "RUA DAS LARANJEIRAS 10 - PÓVOA DA CATARINA TONDELA, 3460-456 SÃO MIGUEL DO OUTEIRO (Portugal)",
+      "telemovel": "938483028",
+      "email": "beatriz.br547@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112175",
+      "nome": "ALESSANDRA ROSENWINCKEL",
+      "morada": "RUA BENTO DE JESUS CARAÇA, 9 R/C, 2600-027 VILA FRANCA DE XIRA (Portugal)",
+      "telemovel": "963525197",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "96048",
+      "nome": "SANDRA PAULA DA SILVA",
+      "morada": "RUA SOUSA PORTO, 22 -3 ESQUERDO, 7800-071 BEJA (Portugal)",
+      "telemovel": "967509389",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "105008",
+      "nome": "BEATRIZ DA SILVA MELO",
+      "morada": "RUA DO MONTEPIO RAINHA DONA LEONOR N20 , 3 ANDAR, 2500-253 CALDAS DA RAINHA (Portugal)",
+      "telemovel": "912361015",
+      "email": "beatrizmelo3869@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "96049",
+      "nome": "VANESSA DA MATTA",
+      "morada": "PRACETA ARY DOS SANTOS 9, 7B - ODIVELAS, 2620-070 PÓVOA DE SANTO ADRIÃO (Portugal)",
+      "telemovel": "911954241",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97841",
+      "nome": "MARINA BONFIM",
+      "morada": "TRAVESSA VENDA NOVA, 146 - 1DTO, 4435-470 RIO TINTO (Portugal)",
+      "telemovel": "935908827",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101681",
+      "nome": "KAREN MORAES",
+      "morada": "45 RUE GRIMALDI ,APP 806, 98000 MONACO (Portugal)",
+      "telemovel": "+351969127787",
+      "email": "juduartee2015@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112177",
+      "nome": "CHRYSTIANNE MIRANDA",
+      "morada": "RUA DO SARDOAL, 20 - 2DTO - SÃO VICTOR, 4710-442 BRAGA (Portugal)",
+      "telemovel": "915482177",
+      "email": "cmdrl2003@yahoo.com.br"
+    },
+    {
+      "ship2uRecipientId": "97842",
+      "nome": "MARINA BONFIM",
+      "morada": "TRAVESSA VENDA NOVA, 146 - 1DTO, 4435-470 RIO TINTO (Portugal)",
+      "telemovel": "988020496",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "112690",
+      "nome": "SANNY MELO",
+      "morada": "RUA DA ARANHA, 24, 2560-192 SÃO PEDRO DA CADEIRA (Portugal)",
+      "telemovel": "926512026",
+      "email": "sanny_mtp@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "97075",
+      "nome": "DEBORRA FEIRREIRA",
+      "morada": "RUA DO HEROÍSMO, 302 - CASA 4, 4300-259 PORTO (Portugal)",
+      "telemovel": "911556503",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97843",
+      "nome": "MARINA BONFIM",
+      "morada": "TRAVESSA VENDA NOVA, 146 - 1DTO, 4435-470 RIO TINTO (Portugal)",
+      "telemovel": "988020496",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "104499",
+      "nome": "LAÍS RODRIGUES",
+      "morada": "RUA ANTÓNIO COSTA CABRAL 4 - PÁTIO ALVAREZ, 2820-214 CHARNECA DA CAPARICA (Portugal)",
+      "telemovel": "965247351",
+      "email": "laisrodriguesaraujopt@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "97844",
+      "nome": "MARINA BONFIM",
+      "morada": "TRAVESSA VENDA NOVA, 146 - 1DTO, 4435-470 RIO TINTO (Portugal)",
+      "telemovel": "988020496",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "112180",
+      "nome": "TANIA ESPANHOL",
+      "morada": "LOJA DO CIDADÃO DE GONDOMAR - BALCÃO EDP - PRAÇA LUÍS DE CAMÕES, 4420-183 GONDOMAR (Portugal)",
+      "telemovel": "936729491",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97077",
+      "nome": "PRISCILA PINTO",
+      "morada": "AV. GAGO COUTINHO, 1 BLOCO G - R/C DIREITO, 2775-197 PAREDE (Portugal)",
+      "telemovel": "918669044",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "104501",
+      "nome": "HR STORE",
+      "morada": "RUA ESTADIO DO FUTEBOL CLUBE DE AVINTES 87, 4 ESQUERDO, 4430-686 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "131128",
+      "nome": "RAQUEL CAETANO",
+      "morada": "RUA DOM SANCHO, 3 RC, 4435-209 RIO TINTO (Portugal)",
+      "telemovel": "935105274",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "104504",
+      "nome": "DAIANE BASTOS DE ARAUJO ASSUNCAO",
+      "morada": "RUA LOMBA DE BAIXO 3, 4795-805 VILARINHO STS (Portugal)",
+      "telemovel": "936141237",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "113208",
+      "nome": "LUANA SANTOS DE SOUZA",
+      "morada": "AVENIDA VISCONDE SÃO JANUÁRIO, 63 - APTO 210, 4740-325 FÃO (Portugal)",
+      "telemovel": "963350038",
+      "email": "santosluana13731@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122937",
+      "nome": "EDUARDA FERNANDES",
+      "morada": "AVENIDA MARTIM, 863, 4755-313 MARTIM (Portugal)",
+      "telemovel": "938465119",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "134202",
+      "nome": "MARINA GUIMARES",
+      "morada": "RUA INSTITUTO CONDE AGROLONGO, 9 CAVE ESQUERDA, 2770-081 PAÇO DE ARCOS (Portugal)",
+      "telemovel": "962184830",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "104506",
+      "nome": "POL",
+      "morada": "RUA CASAL DA LIGEIRA, 20 - ARMAZÉM 14, 2705-830 TERRUGEM SNT (Portugal)",
+      "telemovel": "962401484",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "105018",
+      "nome": "GRAZIELHI FERREIRA",
+      "morada": "RUA DOS TRABALHADORES, 60, 3030-460 COIMBRA (Portugal)",
+      "telemovel": "926797098",
+      "email": "grazielhif@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112187",
+      "nome": "PATRÍCIA DE ANDRADE GONÇALVES",
+      "morada": "RUA HERLANDER MATIAS 31 B, 2580-571 ALENQUER (Portugal)",
+      "telemovel": "968507036",
+      "email": "patricia.26@outlook.com"
+    },
+    {
+      "ship2uRecipientId": "97853",
+      "nome": "LIDIANE SCHIAVINOTO",
+      "morada": "CALLE JULIO DE CASARES, 8 - PORTAL 4B - SANCHINARRO, 28050 MADRID (Portugal)",
+      "telemovel": "+34611804906",
+      "email": "lidianeschiavinoto@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "97598",
+      "nome": "GAZIELA TORRA",
+      "morada": "RUA DA AMOROSA, 300B - AP 1 ESQD G, 4810-058 GUIMARÃES (Portugal)",
+      "telemovel": "915448527",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97854",
+      "nome": "MILENA MENEZES",
+      "morada": "RUA DE BAIXO, 169 - ILHAVO, 3830-414 GAFANHA DO CARMO (Portugal)",
+      "telemovel": "963514252",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "131391",
+      "nome": "BIANCA PACHECO",
+      "morada": "CALLE DEL FRANCOLI, 6 - PISO 3 PUERTA G, 43840 SALOU (Portugal)",
+      "telemovel": "+34636907595",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "133439",
+      "nome": "GABRIELLA BORGES",
+      "morada": "RUA CENTRAL N6 RC ESQUERDO, 3030-858 CEIRA (Portugal)",
+      "telemovel": "910403446",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97855",
+      "nome": "JULIANA GABRIELI DE SOUZA",
+      "morada": "ESTRADA DA MOITA, 89B - 1 ANDAR - FÁTIMA, 2495-651 OURÉM (Portugal)",
+      "telemovel": "965804334",
+      "email": "juliana.gabrieli.js@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "104511",
+      "nome": "ROBERTA CAMAROTTI",
+      "morada": "RUA DE SÃO DINIS, 596, 3° ANDAR, 4250-429 PORTO (Portugal)",
+      "telemovel": "935975028",
+      "email": "betinha_camarotti@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "102464",
+      "nome": "KYARA BARROS",
+      "morada": "RUA SANTOS MINHO, 36A - APTO 3 RC, 4490-549 PÓVOA DE VARZIM (Portugal)",
+      "telemovel": "926307913",
+      "email": "kyarabarros86@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "133441",
+      "nome": "BEATRIZ",
+      "morada": "AV. DOUTOR FRANCISCO DE SA CARNEIRO, 1209, R/C TONDELA, 3460-523 TONDELA (Portugal)",
+      "telemovel": "910177289",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "133442",
+      "nome": "BEATRIZ PINHEIRO",
+      "morada": "AV. DOUTOR FRANCISCO DE SA CARNEIRO, 1209, R/C TONDELA, 3460-523 TONDELA (Portugal)",
+      "telemovel": "910177289",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "134210",
+      "nome": "DANIELLE KLEIN",
+      "morada": "RUA LUIS SOARES BARBOSA, 12 - 7 DRT, 4710-403 BRAGA (Portugal)",
+      "telemovel": "919765146",
+      "email": "dajikleinpe@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "130371",
+      "nome": "ISABELLA KANASHIRO",
+      "morada": "ALDEIA DOS PESCADORES EM573 -  RESTAURANTE MERKADO, 2510-661 VAU (Portugal)",
+      "telemovel": "967465501",
+      "email": "isakanashiro13@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "130372",
+      "nome": "LUCIENE",
+      "morada": "RUA DO MATINHO, 66, 2460-819 TURQUEL (Portugal)",
+      "telemovel": "961247877",
+      "email": "luciene.lamounier@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "96581",
+      "nome": "FERNANDA NORONHA",
+      "morada": "RUA FURRIEL JOÃO VIEIRA, 87 CAVE DIREITA, 2750-627 CASCAIS (Portugal)",
+      "telemovel": "924784000",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "102469",
+      "nome": "JUNIOR LIMA",
+      "morada": "N226 3, MACROFRIO, 3610-054 MONDIM DA BEIRA (Portugal)",
+      "telemovel": "926272230",
+      "email": "jheykelanni.santos@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "114757",
+      "nome": "LETICIA MIRANDA",
+      "morada": "RUA CONSELHEIRO PEQUITO, N 3 R/C DIREITO, 2700-211 AMADORA (Portugal)",
+      "telemovel": "936729345",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "131143",
+      "nome": "JULIA RIBEIRO",
+      "morada": "RUA DO FOGUEIRO, LOTE 88 - RES DO CHAO, 2955-411 PINHAL NOVO (Portugal)",
+      "telemovel": "964750233",
+      "email": "jvidalribeiro16@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "133447",
+      "nome": "BIANCA LINHARES",
+      "morada": "RUA ENGENHEIRO JOSE BASTOS XAVIER 29 R/C ESQUERDO, 3750-130 ÁGUEDA (Portugal)",
+      "telemovel": "926668006",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "112455",
+      "nome": "CAROLINA VENOSI",
+      "morada": "AVENIDA CENTRAL, N 15 / APTO AO, 3800-132 AVEIRO (Portugal)",
+      "telemovel": "927866831",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "103240",
+      "nome": "DÉBORA FERREIRA",
+      "morada": "RUA DO HEROÍSMO, 302, CASA 4, 4300-259 PORTO (Portugal)",
+      "telemovel": "911556503",
+      "email": "deboragomesferreira5@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112200",
+      "nome": "JUPIRA GONÇALVES",
+      "morada": "BECO DA BOA UNIÃO, N 5, 3025-143 COIMBRA (Portugal)",
+      "telemovel": "913963883",
+      "email": "judandara27@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "102729",
+      "nome": "MARIA EDUARDA PASCHOAL",
+      "morada": "RUA FIGUEIRINHA, 37 RC A, 2780-016 OEIRAS (Portugal)",
+      "telemovel": "913890146",
+      "email": "eduarda.carneiro@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "114761",
+      "nome": "KEYLLANE POLINE DE OLIVEIRA MENDONÇA",
+      "morada": "AV. FERNÃO DE MAGALHÃES 229, 3000-176 COIMBRA (Portugal)",
+      "telemovel": "910732267",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "134218",
+      "nome": "ALEN LIMA",
+      "morada": "AV DOM AFONSO HENRIQUES 45, CELAS FABI MICROPIGMENTAÇAO, 3000-011 COIMBRA (Portugal)",
+      "telemovel": "932791510",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "102730",
+      "nome": "CARLA VIDRAGO VIEIRA",
+      "morada": "TRAVESSA DA UNIÃO N12, 4705-462 CELEIRÓS BRG (Portugal)",
+      "telemovel": "914783926",
+      "email": "carlavidragovidrago@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112459",
+      "nome": "MARIANE LACERDA",
+      "morada": "ESTRADA DA CIRCUNVALACAO 16002, 4450-100 MATOSINHOS (Portugal)",
+      "telemovel": "924331466",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "102732",
+      "nome": "BARBARA SILVERIO MACHADO",
+      "morada": "PRAÇA CARLOS RAMOS, NÚMERO 13, APT 8D - OLIVAIS, 1800-052 LISBOA (Portugal)",
+      "telemovel": "910927692",
+      "email": "barbarasilveriom@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "110156",
+      "nome": "HR Store",
+      "morada": "RUA GENERAL TORRES 1220 - PISO -1 , LOJA 40, 4400-164 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "131149",
+      "nome": "GRAZIELE SOUSA",
+      "morada": "RUA DE MACAU, 20 - 1E, 2700-540 AMADORA (Portugal)",
+      "telemovel": "960163229",
+      "email": "grazii-l@live.com"
+    },
+    {
+      "ship2uRecipientId": "110157",
+      "nome": "ANDRESSA LURDES GONZATTI STAUDT",
+      "morada": "AVENIDA VIEIRA DA SILVA 23 - 5D, 2855-698 CORROIOS (Portugal)",
+      "telemovel": "968532710",
+      "email": "dessas_12@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "102735",
+      "nome": "MAITÊ ALMEIDA BEMERGUY VINHAS",
+      "morada": "AVENIDA ROMA, 21, PISO 6, PORTA 4, 43005 TARRAGONA (Portugal)",
+      "telemovel": "+34603513433",
+      "email": "maitealmeidabemerguy@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "110160",
+      "nome": "HR Store",
+      "morada": "RUA DE GENERAL TORRES, 1220 PISO -1, LOJA 40, 4400-164 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "117072",
+      "nome": "SARA FONSECA",
+      "morada": "ESTRADA BOA VISTA 29, 7570-504 MELIDES (Portugal)",
+      "telemovel": "910908293",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "96081",
+      "nome": "ANA  CARAJURU",
+      "morada": "RUA 14, 733 - 3 ANDAR, 4500-233 ESPINHO (Portugal)",
+      "telemovel": "912687101",
+      "email": "anacaraju@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "110161",
+      "nome": "CECLILIA ORTEGA",
+      "morada": "TRAVESSA SÃO BERNARDINO, 19, PRÉDIO 4, ANDAR 1, 1150-318 LISBOA (Portugal)",
+      "telemovel": "910815832",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "118865",
+      "nome": "CLAUDIA APARECIDA DO SANTOS ROCHA",
+      "morada": "AVENIDA SAO JOAO DE DEUS, 6 - 2 ANDAR, 7005-181 ÉVORA (Portugal)",
+      "telemovel": "960118140",
+      "email": "bruno_aidulac@outlook.pt"
+    },
+    {
+      "ship2uRecipientId": "124497",
+      "nome": "KAREN CARQUEIJA",
+      "morada": "ALAMEDA JOSE ANTONIO DA COSTA ARAUJO, 148  - A42, 4760-514 VILA NOVA DE FAMALICÃO (Portugal)",
+      "telemovel": "911728280",
+      "email": "karenccarqueija@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "129105",
+      "nome": "MARIANA LUCENA",
+      "morada": "RUA DR LOUREIRO AMORIM, 20 1 DT TRAS, 4710-487 BRAGA (Portugal)",
+      "telemovel": "964609195",
+      "email": "marianalucenaportugal@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "96082",
+      "nome": "MICHELLE MIRANDA MENDES",
+      "morada": "RUA 5 DE OUTUBRO, 14 - 1 DTO, MOINHOS DA FUNCHEIRA, 2650-333 AMADORA (Portugal)",
+      "telemovel": "966351077",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "118866",
+      "nome": "DANIELA CRAVO",
+      "morada": "RUA DA RABATA, 222 - 3 ANDAR, 4805-017 BARCO GMR (Portugal)",
+      "telemovel": "961673779",
+      "email": "dani.cravorios@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "117332",
+      "nome": "MONICA PRISCILA",
+      "morada": "AVENIDA ANTÔNIO LEAL DE ASCENSÃO, 10 A, 2560-309 TORRES VEDRAS (Portugal)",
+      "telemovel": "915567130",
+      "email": "monikpricosta@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "118868",
+      "nome": "KARINA COELHO",
+      "morada": "RUA JORGE COLAÇO, 41 - R/C ESQUERDO, 1700-252 LISBOA (Portugal)",
+      "telemovel": "912054243",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "131158",
+      "nome": "JESSICA OLIVEIRA",
+      "morada": "RUA DO  BRASIL, 31 BLOCO B - 7 DIREITO, 3030-175 COIMBRA (Portugal)",
+      "telemovel": "962831478",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "96086",
+      "nome": "TATIANA OLIVEIRA",
+      "morada": "RUA ALMOGRAVE, 12A, 2705-411 SÃO JOÃO DAS LAMPAS (Portugal)",
+      "telemovel": "936141888",
+      "email": "tati_deoliveira@yahoo.com.br"
+    },
+    {
+      "ship2uRecipientId": "117590",
+      "nome": "FERNANDA RODRIGUES",
+      "morada": "RUA ANTÔNIO FEIJÓ 13A, 2725-434 MEM MARTINS (Portugal)",
+      "telemovel": "968447239",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "103255",
+      "nome": "CAMILA FURLAN",
+      "morada": "RUA DIAS COELHO, 2B, 7000-721 ÉVORA (Portugal)",
+      "telemovel": "937990686",
+      "email": "cami.furlan@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "129111",
+      "nome": "HR Store",
+      "morada": "RUA GENERAL TORRES 1220 - PISO -1 , LOJA 40, 4400-164 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "105050",
+      "nome": "REBECA SILVA",
+      "morada": "RUA ESTRADA DA RIBEIRA 104 - PONTE CAVALEIRO, 2410-854 LEIRIA (Portugal)",
+      "telemovel": "911548506",
+      "email": "beccaguatura@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "114778",
+      "nome": "THALITA DA SILVA SOUZA",
+      "morada": "RUA DO LAMEIRÃO, 105 CASA 5, 4800-180 GUIMARÃES (Portugal)",
+      "telemovel": "924334376",
+      "email": "souza.thalitaa@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "117594",
+      "nome": "DANDIARA MONTEIRO",
+      "morada": "LARGO DO CÔ 181, 2ESQ, 4595-298 PENAMAIOR (Portugal)",
+      "telemovel": "935148107",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "96091",
+      "nome": "THAIS FERNANDA DA SILVA ARAUJO",
+      "morada": "RUA 20 DE SETEMBRO, N43 - 3 ANDAR DRTO, 3560-157 SÁTÃO (Portugal)",
+      "telemovel": "915676927",
+      "email": "g_gabrielthais@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "102747",
+      "nome": "PAMELLA",
+      "morada": "RUA ALTO DAS CASAS 483B - OLIVEIRA DE AZEMÉIS, 3700-703 MACIEIRA DE SARNES (Portugal)",
+      "telemovel": "936736832",
+      "email": "pamellaaeenzo@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "118875",
+      "nome": "EDINEIRE MARIA CHAGAS",
+      "morada": "RUA CANDIDO REIS, APTO 142, 2840-503 SEIXAL (Portugal)",
+      "telemovel": "926203290",
+      "email": "edineiremaria@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "102748",
+      "nome": "JACIANE SILVA",
+      "morada": "RUA DO MONTE LEITE 468 - 4 ANDAR ESQUERDO FRONTAL, 2765-496 ESTORIL (Portugal)",
+      "telemovel": "963802265",
+      "email": "jaciane877@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "117340",
+      "nome": "BARBARA PASSOS",
+      "morada": "RUA DO SOL, N 71 ORDEM, 2430-157 MARINHA GRANDE (Portugal)",
+      "telemovel": "931110859",
+      "email": "barbarapassos38@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "102494",
+      "nome": "CARINA DUARTE DUTRA",
+      "morada": "RUA 24 DE JUNHO 2117 - 1 ANDAR - AZURÉM, 4800-076 GUIMARÃES (Portugal)",
+      "telemovel": "932164816",
+      "email": "cariduarte2020@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "96095",
+      "nome": "MARIA FERNANDA SORIANO",
+      "morada": "PRACETA VITORINO NEMESIO 175, 2 ANDAR TRASEIRO ESQD, 4425-700 MAIA (Portugal)",
+      "telemovel": "913810453",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "103263",
+      "nome": "CAROLINA ROCHA DOS ANJOS",
+      "morada": "AVENIDA 29 DE AGOSTO, N° 162 1º DTO, 2705-869 TERRUGEM SNT (Portugal)",
+      "telemovel": "927218713",
+      "email": "carol.oliveira14@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "117343",
+      "nome": "JAMILLY RODRIGUES DA SILVA",
+      "morada": "RUA OLIVENÇA, 21 - SALA 309 - CLINICA ALMEDINA, 3000-018 COIMBRA (Portugal)",
+      "telemovel": "+351912855055",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "109408",
+      "nome": "THAMYRIS DOS SANTOS",
+      "morada": "RUA DE SÃO MAMEDE 256 BL 01 2 EF, 4410-021 SERZEDO VNG (Portugal)",
+      "telemovel": "913633441",
+      "email": "thamy.vianna@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "117600",
+      "nome": "ROZELENA GONÇALVES",
+      "morada": "RUA SÃO PEDRO 1304, 4825-045 AGRELA STS (Portugal)",
+      "telemovel": "932222423",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "117345",
+      "nome": "JAMILLY RODRIGUES DA SILVA",
+      "morada": "RUA OLIVENÇA, 21 - SALA 309 - CLINICA ALMEDINA, 3000-018 COIMBRA (Portugal)",
+      "telemovel": "912855055",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "113506",
+      "nome": "PRISCILA  GLECE",
+      "morada": "PRAÇA DAS FONTAINHAS, 29 - PRIMEIRO ESQUERDO, 4700-382 BRAGA (Portugal)",
+      "telemovel": "961400675",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "124258",
+      "nome": "THAYNA PAZ",
+      "morada": "RUA DO OUTEIRO N 5 , 1 ANDAR, 4820-640 ARÕES (SANTA CRISTINA) (Portugal)",
+      "telemovel": "965648027",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97891",
+      "nome": "LUANA RODRIGUES",
+      "morada": "RUA DOUTOR CARLOS ALBERTO MORAIS, 122 - BLOCO C / 15 DIREITO, 4450-349 MATOSINHOS (Portugal)",
+      "telemovel": "923002320",
+      "email": "luana.dr@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "113507",
+      "nome": "CALENE SILVA",
+      "morada": "AVENIDA DA REPÚBLICA , 443, 5D, 2775-273 PAREDE (Portugal)",
+      "telemovel": "912914347",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "114019",
+      "nome": "DEBORA DA SILVA NOGUEIRA",
+      "morada": "RUA DA LIBERDADE, 30, 7540-321 SÃO BARTOLOMEU DA SERRA (Portugal)",
+      "telemovel": "963695588",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "117347",
+      "nome": "DENIZE SOARES",
+      "morada": "TRAVESSA DAS GIAS, 44, 3885-334 CORTEGAÇA OVR (Portugal)",
+      "telemovel": "918473755",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "127587",
+      "nome": "JESSICA BARRETO",
+      "morada": "RUA DO CERRO, 156B, 4745-219 GUIDÕES (Portugal)",
+      "telemovel": "964006677",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "102500",
+      "nome": "ANDREA GOMES",
+      "morada": "AVENIDA DO BRASIL 281, 3700-067 SÃO JOÃO DA MADEIRA (Portugal)",
+      "telemovel": "910629605",
+      "email": "andreapereira2978@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "109412",
+      "nome": "BARBARA KODATO",
+      "morada": "ESTRADA DA TORRE, 1476 - 2º DIREITO, 2775-678 CARCAVELOS (Portugal)",
+      "telemovel": "935010243",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "114020",
+      "nome": "CAMILA NUNES PARREIRAS",
+      "morada": "RUA DA REPUBLICA 157, 5370-347 MIRANDELA (Portugal)",
+      "telemovel": "924713854",
+      "email": "camila.parreiras@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "96101",
+      "nome": "SARITA DOMINGOS",
+      "morada": "RUA AMILCAR CABRAL, N 10-A - LOJA OPTICALIA, 2695-015 BOBADELA LRS (Portugal)",
+      "telemovel": "960170607",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "128613",
+      "nome": "LETICIA KLEIN",
+      "morada": "ESTRADA DA BELA VISTA, 105 1A, 2820-170 CHARNECA DA CAPARICA (Portugal)",
+      "telemovel": "931916365",
+      "email": "leticia.klein29@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "96102",
+      "nome": "SARITA DOMINGOS",
+      "morada": "RUA AMILCAR CABRAL, N 10-A - LOJA OPTICALIA, 2695-015 BOBADELA LRS (Portugal)",
+      "telemovel": "960170607",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "102502",
+      "nome": "GABRIELA PEREIRA",
+      "morada": "RUA LUÍS VEIGA LEITAO 116, PISO 1 SALA 225C, 4050-339 PORTO (Portugal)",
+      "telemovel": "934227879",
+      "email": "gabipereiraa17@icloud.com"
+    },
+    {
+      "ship2uRecipientId": "125542",
+      "nome": "LAIS ALICE CORDEIRO",
+      "morada": "RUA ANTONIO CAMPOS, N 171, 4590-541 PAÇOS DE FERREIRA (Portugal)",
+      "telemovel": "920615874",
+      "email": "alice123.ac@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "125543",
+      "nome": "LARYSSA DOS SANTOS SILVA",
+      "morada": "RUA FAUSTINO 9, POBRAL, 2705-743 SÃO JOÃO DAS LAMPAS (Portugal)",
+      "telemovel": "927783556",
+      "email": "drumondlaryssa@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "128615",
+      "nome": "PAULA OLIVEIRA",
+      "morada": "COMANDANTE ANTONIO MARTINS, N17 4 DR TR, 4520-190 SANTA MARIA DA FEIRA (Portugal)",
+      "telemovel": "932976184",
+      "email": "advpaulagoliveira.pt@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "114792",
+      "nome": "MICHELLE DE SÁ",
+      "morada": "RUA DE SÃO FILIPE 37A, 1250-225 LISBOA (Portugal)",
+      "telemovel": "922227800",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "125544",
+      "nome": "CARLA CAROLINE BORGES",
+      "morada": "PRACETA DE CABINDA, N6, 6 FRENTE, 2780-003 OEIRAS (Portugal)",
+      "telemovel": "910783334",
+      "email": "carla.carolineborges@yahoo.com.br"
+    },
+    {
+      "ship2uRecipientId": "125545",
+      "nome": "JESSICA DAURIA",
+      "morada": "CALLE LA CARRERA, N 17, 1C, 26120 ALBELDA DE IREGUA (Portugal)",
+      "telemovel": "961356755",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "129897",
+      "nome": "KAROLINE LIMA",
+      "morada": "RUA ALFREDO CUNHA, 532C APTO 7 ESQUERDO, 4450-022 MATOSINHOS (Portugal)",
+      "telemovel": "927788990",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "97898",
+      "nome": "CRYSTIANNE MIRANDA",
+      "morada": "RUA DO SARDOAL, 20 - 2DTO - SÃO VICTOR, 4710-442 BRAGA (Portugal)",
+      "telemovel": "915482177",
+      "email": "cmdrl2003@yahoo.com.br"
+    },
+    {
+      "ship2uRecipientId": "117354",
+      "nome": "GABRIELA DE OLIVEIRA",
+      "morada": "RUA JOSE DA SILVA RIBEIRO, 43 - 2 ANDAR DIREITO FTE, 3080-604 FIGUEIRA DA FOZ (Portugal)",
+      "telemovel": "969054712",
+      "email": "gabcossta@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "103275",
+      "nome": "RAYANNE AVELINO DA FONSECA",
+      "morada": "RUA DOUTOR FERNANDO TUDELA 34 - 1 ESQUERDO, 3860-379 ESTARREJA (Portugal)",
+      "telemovel": "966690982",
+      "email": "rayanneavelino5@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "111725",
+      "nome": "TAIS COSTA CIRILO DA SILVA",
+      "morada": "RUA DE PLOUMAGOAR 33, 1 DRTO, 5200-290 MOGADOURO (Portugal)",
+      "telemovel": "912704913",
+      "email": "taiscostacirilodasilva@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "115565",
+      "nome": "DÁTIÇA DA SILVA LISBOA",
+      "morada": "LARGO DO CARDAL 22 LOJA 16, 3100-440 POMBAL (Portugal)",
+      "telemovel": "964313635",
+      "email": "lisboadatica@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "127853",
+      "nome": "FABIANA SANTOS",
+      "morada": "RUA RIO NABAO 26A, 2865-589 FERNÃO FERRO (Portugal)",
+      "telemovel": "911531479",
+      "email": "faby0603@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "115567",
+      "nome": "KAROLINE BECHUETTI",
+      "morada": "RUA JOÃO ROSA, 152A - APT 32, 4460-189 SENHORA DA HORA (Portugal)",
+      "telemovel": "935422044",
+      "email": "karolinebechuetti@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "103280",
+      "nome": "CRISTIANE FELIX AGUIAR",
+      "morada": "RUA DA BELA VISTA NUMERO 7  - PORTA 2, 1* ESQ FRENTE, 2530-027 ATALAIA LNH (Portugal)",
+      "telemovel": "913899355",
+      "email": "crisfelix0402@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "127858",
+      "nome": "LEILANE DE SOUZA",
+      "morada": "RUA DAS ANDORINHAS, 60, 4 ESQUERDO, 4950-854 CORTES (Portugal)",
+      "telemovel": "910088477",
+      "email": "leilane.leao@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "114803",
+      "nome": "CAMILLE CAMPOS",
+      "morada": "AV. PROF DR ANÍBAL CAVACO SILVA, 127 / 5D, 4435-127 RIO TINTO (Portugal)",
+      "telemovel": "968972760",
+      "email": "camillecampos@mail.com"
+    },
+    {
+      "ship2uRecipientId": "111732",
+      "nome": "SHIMENIA BATISTA",
+      "morada": "AVENIDA DOUTOR DOMINGOS CAETANO DE SOUSA 386, 1DTO, 4520-212 SANTA MARIA DA FEIRA (Portugal)",
+      "telemovel": "911538391",
+      "email": "alinemihs@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "131190",
+      "nome": "CAMILA NUNES DE VINCENZO",
+      "morada": "RUA VITORINO FROIS, 25 - 2 ESQUERDO, 2500-256 CALDAS DA RAINHA (Portugal)",
+      "telemovel": "934541089",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "116854",
+      "nome": "FABIANA DA SILVA PACHECO",
+      "morada": "TRAVESSA ARNALDO DE SOUSA 34, 4595-110 FRAZÃO (Portugal)",
+      "telemovel": "932399565",
+      "email": "fabianaspachecos@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122235",
+      "nome": "LUCIENE VARGAS",
+      "morada": "RUA DAS FORÇAS ARMADAS, 133 RC ESQUERDO FRENTE, 4715-029 BRAGA (Portugal)",
+      "telemovel": "962793861",
+      "email": "lucienesantana.silva@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122238",
+      "nome": "SILVIA BORGES",
+      "morada": "RUA EDFICIO SANTO ANTONIO, N 83, 4 ESQUERDO, 8000-284 FARO (Portugal)",
+      "telemovel": "967315951",
+      "email": "silvianunesborges@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "121216",
+      "nome": "POLLYANA PORTO",
+      "morada": "PRACETA MANUEL REGADO JUNIOR, 131 2 ESQ, 4425-124 MAIA (Portugal)",
+      "telemovel": "912777333",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "130691",
+      "nome": "HANNDRESSA DOS SANTOS",
+      "morada": "RUA ANTONIO JOAO RAMALHO DE ALMEIDA, 19, 2120-077 SALVATERRA DE MAGOS (Portugal)",
+      "telemovel": "912878600",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "133253",
+      "nome": "GEIZIELE PAIVA",
+      "morada": "RUA DA QUINTA NOVA LOTE 131 RC, R\\C E, 3510-020 VISEU (Portugal)",
+      "telemovel": "936348308",
+      "email": "geizielepaiva72@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "117637",
+      "nome": "LESLIE VILA",
+      "morada": "AVENIDA PADRE JULIO FRAGATA, 78, 4710-413 BRAGA (Portugal)",
+      "telemovel": "912553908",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "130693",
+      "nome": "RESTAURANTE BOM SABOR",
+      "morada": "CENTRO COMERCIAL SAO FRANCISCO - LOJA 23, 4810-286 GUIMARÃES (Portugal)",
+      "telemovel": "938822563",
+      "email": "restaurantebomsaborguimaraes@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "117126",
+      "nome": "RAISSA PEREIRA",
+      "morada": "RUA DA FONTE SECA 47 - 2F, 3720-713 SÃO ROQUE (Portugal)",
+      "telemovel": "961440321",
+      "email": "rassagostini@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122246",
+      "nome": "TAHIANA DA SILVA MARINHO VARELA",
+      "morada": "RUA JOSÉ AFONSO, 10, 6D, 2625-171 PÓVOA DE SANTA IRIA (Portugal)",
+      "telemovel": "936039360",
+      "email": "tahianasmarinho@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "114824",
+      "nome": "FERNANDA PAIS",
+      "morada": "RUA  LUÍS ANTONIO CORREIA Nº123/ 3 ANDAR DIREITO, 4715-310 BRAGA (Portugal)",
+      "telemovel": "910276764",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "130696",
+      "nome": "BEATRIZ TEIXEIRA BARBOZA",
+      "morada": "RUA DOS CRAVOS VERMELHOS, N 5 - SEGUNDO ANDAR, 2955-179 PINHAL NOVO (Portugal)",
+      "telemovel": "924179302",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "117129",
+      "nome": "DEBORA SPULDARO",
+      "morada": "RUA ELAINE SANCEAU, 305, RC, 4465-619 LEÇA DO BALIO (Portugal)",
+      "telemovel": "915594837",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "122249",
+      "nome": "GLEYCE KELY CARDOSO MEDEIROS",
+      "morada": "PRAÇA DO CONDESTÁVEL 106 APARTAMENTO 6° ESQUERDO, 4700-215 BRAGA (Portugal)",
+      "telemovel": "937256927",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "111754",
+      "nome": "ARLENE BRUNA OLIVEIRA",
+      "morada": "RUA ANTONIO REIS AREAL, 72 - ERVOSA, 4785-408 TROFA (Portugal)",
+      "telemovel": "962260736",
+      "email": "arlene-oliveira@outlook.com"
+    },
+    {
+      "ship2uRecipientId": "112010",
+      "nome": "DANIELLA SOARES DE JESUS",
+      "morada": "RUA VITORINO TAVARES DE SOUSA - N 105, 3870-062 BUNHEIRO (Portugal)",
+      "telemovel": "933757521",
+      "email": "soaresdaniella803@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112011",
+      "nome": "ALANA DE OLIVEIRA INOCENCIO SALES",
+      "morada": "AVENIDA INFANTE DOM HENRIQUE 24 3 ESQ, 2910-529 SETÚBAL (Portugal)",
+      "telemovel": "938452113",
+      "email": "alanasales2022@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "130699",
+      "nome": "NEIA LIMA",
+      "morada": "RUA DA LIBERDADE, 21 - CASA DA FRENTE, 2590-291 SOBRAL DE MONTE AGRAÇO (Portugal)",
+      "telemovel": "966569943",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "117133",
+      "nome": "RENA DOS SANTOS",
+      "morada": "RUA DOM JOAO AFONSO ESTEVES DE AZAMBUJA, N1 RC, 2050-326 AZAMBUJA (Portugal)",
+      "telemovel": "961747604",
+      "email": "ran_dias@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "130702",
+      "nome": "VIVIANE MELO",
+      "morada": "RUA STA MARIA DE VIATODOS, 639 2D, 4775-269 VIATODOS (Portugal)",
+      "telemovel": "913838645",
+      "email": "vivirosariosampaio@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "112015",
+      "nome": "CRISTIANA CAETANO",
+      "morada": "RUA FILIPA DE VILHENA, 89 R/CH, 4435-028 RIO TINTO (Portugal)",
+      "telemovel": "919451708",
+      "email": "cristiana_gf@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "103313",
+      "nome": "NATHALIA VAZ",
+      "morada": "RUA FERNÃO DE ORNELAS 67,  1 ANDAR ESQUERDO, 9050-021 FUNCHAL (Portugal)",
+      "telemovel": "966482535",
+      "email": "nathaliavazlima@outlook.com.br"
+    },
+    {
+      "ship2uRecipientId": "117905",
+      "nome": "VANESSA CARVALHO",
+      "morada": "RUA DA BARRANHA, 690 - SENHORA DA HORA, 4460-254 SENHORA DA HORA (Portugal)",
+      "telemovel": "935974347",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "117138",
+      "nome": "CAMILA NICOLAU",
+      "morada": "RUA DE COIMBRA - N 127 RES DE CHÃO, 3025-608 VIL DE MATOS (Portugal)",
+      "telemovel": "927109758",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "124306",
+      "nome": "FERNANDA GUEDES",
+      "morada": "RUA PEDRO ÁLVARES CABRAL, 4 R/C ESQUERDO - PALMELA, 2950-699 QUINTA DO ANJO (Portugal)",
+      "telemovel": "914686634",
+      "email": "fefeguedes@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "103315",
+      "nome": "JOYCE VIEIRA",
+      "morada": "PORTO CHÃO, 12 RC - AVEIRO, 3770-104 OLIVEIRA DO BAIRRO (Portugal)",
+      "telemovel": "911920302",
+      "email": "joycevieira88@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "117907",
+      "nome": "ELIS BENTO",
+      "morada": "CAMINHO DO PARRAU, 10 - ZONA INDUSTRIAL DAS CORREDOURAS, 2630-369 ARRUDA DOS VINHOS (Portugal)",
+      "telemovel": "917906808",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "108180",
+      "nome": "EDNEIA ISQUERDO DIAS",
+      "morada": "RUA DE SANTO ANDRÉ 9 - 1 A DIREITO, 4710-308 BRAGA (Portugal)",
+      "telemovel": "936653932",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "108182",
+      "nome": "TALITA DIAS",
+      "morada": "RUA EDUARDO JOAQUIM REIS FIGUEIRA, 1029 - 1 CENTRO, 4440-647 VALONGO (Portugal)",
+      "telemovel": "939968146",
+      "email": "talita.correa.86@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "97943",
+      "nome": "BEATRIZ GONÇALVES",
+      "morada": "RUA DR JÃO DE BARROZ, N 110 - APTO 4DTO, 2725-486 MEM MARTINS (Portugal)",
+      "telemovel": "913926474",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "113047",
+      "nome": "NILÁRIA CRISTINE RIBEIRO",
+      "morada": "RUA DIAS COELHO, 5 - VIVENDA FIGUEIREDO - 1º DIREITO, 2680-345 UNHOS (Portugal)",
+      "telemovel": "932359973",
+      "email": "nilariaribeiro@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "115608",
+      "nome": "AMANDA PEREIRA DA SILVA",
+      "morada": "RUA ANTÔNIO ARAÚJO 67, R/C DIREITO FRENTE, 4580-045 PAREDES (Portugal)",
+      "telemovel": "967018692",
+      "email": "amanda.psilvapt@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101017",
+      "nome": "JOYCE VIEIRA",
+      "morada": "RUA DA GUARDA 718, 4458-001 PERAFITA (Portugal)",
+      "telemovel": "911920302",
+      "email": "joycevieira88@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "100507",
+      "nome": "IRAIANA MARIOTTE",
+      "morada": "RUA JOSE LUIS DE ANDRADE 137 - 3 DIREITO, 4780-487 SANTO TIRSO (Portugal)",
+      "telemovel": "937464604",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101019",
+      "nome": "IRLANE MORAIS",
+      "morada": "RUA DA TORRINHA E9 - 1 ESQ - SANTAREM, 2260-379 VILA NOVA DA BARQUINHA (Portugal)",
+      "telemovel": "912531662",
+      "email": "irlanedemorais@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100508",
+      "nome": "MILENA DE SOUZA ALVES",
+      "morada": "RUA DOM JOAO III - N115 - APT 505 - 5 ANDAR, 3030-329 COIMBRA (Portugal)",
+      "telemovel": "910586526",
+      "email": "milenamgalves@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100509",
+      "nome": "MARCIA NOGUEIRA",
+      "morada": "RUA DA PRIMAVERA 12 - 1 DIREITO - FLANDES, 3100-339 POMBAL (Portugal)",
+      "telemovel": "914422763",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "112029",
+      "nome": "CARINA CIANCIO",
+      "morada": "RUA DO BAIRRO DO FACHO - BLOCO F RÉS DE CHÃO ESQUERDO, 4910-342 SEIXAS CMN (Portugal)",
+      "telemovel": "913452420",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "109470",
+      "nome": "HR Store",
+      "morada": "Rua do General Torres 1220, Loja 40, Piso -1, 4400-164 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "113054",
+      "nome": "THAIS CUNHA SOUSA",
+      "morada": "RUA DA COUTADA, 288, 4755-538 VÁRZEA BCL (Portugal)",
+      "telemovel": "935962855",
+      "email": "thaismelbourny50@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "131999",
+      "nome": "DAIANE SILVA DE CARVALHO",
+      "morada": "AVENIDA ROCHA PARIS, 148 - 2 ESQUERDO, 4900-494 VIANA DO CASTELO (Portugal)",
+      "telemovel": "963695463",
+      "email": "daianeec@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "100511",
+      "nome": "ISLANE DOS SANTOS ANDRE SILVA",
+      "morada": "ESTRADA PRINCIPAL 10A - PALMEIROS, 2440-194 BATALHA (Portugal)",
+      "telemovel": "935611116",
+      "email": "islaneandre76@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "116639",
+      "nome": "RAFAELA DOS SANTOS LIMA",
+      "morada": "RUA DO CRUZEIRO 104 RC DIREITO, 3660-694 VÁRZEA SPS (Portugal)",
+      "telemovel": "938976788",
+      "email": "rafaelalima253315@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101024",
+      "nome": "PATRICIA RODRIGUES",
+      "morada": "AVENIDA DA LIBERDADE 16 - 1B - SINTRA, 2745-297 QUELUZ (Portugal)",
+      "telemovel": "961831965",
+      "email": "pattriciadsrodrigues@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101792",
+      "nome": "HR Store",
+      "morada": "Rua Camilo Vaz 25 RC, 4430-686 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "112800",
+      "nome": "CATARINA VIEIRA",
+      "morada": "PRAÇA LUÍS DE CAMÕES, 57C, 4480-719 VILA DO CONDE (Portugal)",
+      "telemovel": "914508158",
+      "email": "a.catarina.s.viera@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "107169",
+      "nome": "BARBARA TUDAN ALVES",
+      "morada": "RUA VALE DE LOBOS, 44A, FRAÇÃO 2M, EDIFÍCIO ROMA, 2410-078 LEIRIA (Portugal)",
+      "telemovel": "912361444",
+      "email": "barbaratudan@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "112803",
+      "nome": "THAIS CRISTINA SOARES ROCHA",
+      "morada": "RUA DE TRÁS DE MATOS, 2 - RÉS DE CHÃO, 4810-618 CALVOS GMR (Portugal)",
+      "telemovel": "966374995",
+      "email": "a.catarina.s.viera@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100516",
+      "nome": "GEIZA CRISTINA DIAS MENDES",
+      "morada": "RUA DA FONTE VELHA 29 - 1 DIREITO - EMBRA, 2430-128 MARINHA GRANDE (Portugal)",
+      "telemovel": "936179880",
+      "email": "geizadias88@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "102052",
+      "nome": "NAITE ALMEIDA",
+      "morada": "RUA FONTES PEREIRA DE MELO, 2377 BL 15- APTO 4F, 4760-337 VILA NOVA DE FAMALICÃO (Portugal)",
+      "telemovel": "964543339",
+      "email": "naitealmeida@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101288",
+      "nome": "JESSICA BASTOS SOUZA",
+      "morada": "RUA MORGADO MATEUS 17 RC DIREITO, 5000-455 VILA REAL (Portugal)",
+      "telemovel": "932369916",
+      "email": "jessicabastossouza@yahoo.com.br"
+    },
+    {
+      "ship2uRecipientId": "110504",
+      "nome": "MARIA DA GLÓRIA SANTOS SILVA",
+      "morada": "AV FERNÃO DE MAGALHÃES 172 - 2 M - PRAIA DA BARRA, 3830-749 GAFANHA DA NAZARÉ (Portugal)",
+      "telemovel": "927175510",
+      "email": "mgss0711@outlook.com"
+    },
+    {
+      "ship2uRecipientId": "116136",
+      "nome": "JESSICA FLOES",
+      "morada": "RUA DOUTOR JOÃO VITORINO MONTEIRO NÚMERO 7, 3520-052 NELAS (Portugal)",
+      "telemovel": "963948793",
+      "email": "jessica_floes@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "101289",
+      "nome": "JOANA RITA GABRIEL DAS NEVES JARDIM",
+      "morada": "TRAVESSA FLORENTINO PEDRO LOPES, LOTE 05 , RÉS DO CHÃO ESQ - SÃO ROMÃO, 2410-260 LEIRIA (Portugal)",
+      "telemovel": "927571255",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "102057",
+      "nome": "TATIANE NAVARRO",
+      "morada": "RUA VASCO DA GAMA, 64 - 4 DRTO, 3080-043 FIGUEIRA DA FOZ (Portugal)",
+      "telemovel": "910929246",
+      "email": "tatiane.francolima@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "110505",
+      "nome": "DAIANE FERNANDES DA SILVA",
+      "morada": "RUA ALM. REIS 42/44, 4490-463 PÓVOA DE VARZIM (Portugal)",
+      "telemovel": "931625250",
+      "email": "daiane.fernandes3105@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101290",
+      "nome": "RAINARA GUEDES BURANELI",
+      "morada": "RUA DIOGO CÃO 6, 2660-445 SANTO ANTÓNIO CAVALEIROS (Portugal)",
+      "telemovel": "939314810",
+      "email": "rainaraburanely@icloud.com"
+    },
+    {
+      "ship2uRecipientId": "110506",
+      "nome": "JOICE SALES",
+      "morada": "RUA DA AREOSA, 190 1º DIREITO, 4200-083 PORTO (Portugal)",
+      "telemovel": "914041502",
+      "email": "joicedaniel@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "101035",
+      "nome": "CAIRE ROSSANE ARMANCIO DA SILVA",
+      "morada": "RUA D DINIS N4 R ESQ, 2605-134 BELAS (Portugal)",
+      "telemovel": "928329772",
+      "email": "cairerossane@outlook.com"
+    },
+    {
+      "ship2uRecipientId": "101291",
+      "nome": "FABRÍCIA RAFAELLA DE SOUZA",
+      "morada": "RUA FILARMÓNICA FRATERNIDADE POIARENCE, 30 RC/ESQ, 3350-118 VILA NOVA DE POIARES (Portugal)",
+      "telemovel": "938559005",
+      "email": "fabriciasouza.pt@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "103595",
+      "nome": "ELOA MEDEIROS DA SILVA",
+      "morada": "RUA ALBADAL 15, 3030-851 CEIRA (Portugal)",
+      "telemovel": "936220328",
+      "email": "eloamedeiros200915@gmai.com"
+    },
+    {
+      "ship2uRecipientId": "110507",
+      "nome": "PATRICIA SANTOS",
+      "morada": "RUA ALMEIDA GARRET, 50 - 2º ESQUERDO, 4715-559 BRAGA (Portugal)",
+      "telemovel": "934473527",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "110763",
+      "nome": "EMILLY CAROLINE DE LIMA SOUZA",
+      "morada": "ESTRADA NACIONAL 205, 163 - 1EF, 4730-096 CABANELAS VVD (Portugal)",
+      "telemovel": "927537926",
+      "email": "emilly-cls@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "100524",
+      "nome": "THAYNA ANDRADE ALVES",
+      "morada": "RUA AMALIA RODRIGUES 10, 7800-258 BEJA (Portugal)",
+      "telemovel": "933497414",
+      "email": "thatathayna17@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101292",
+      "nome": "RAYSSA ARAUJO",
+      "morada": "RUA CIDADE DE LISBOA 7 C RET/CHÃO ESQUERDO , BAIRRO DA ANGOLA, 2680-037 CAMARATE (Portugal)",
+      "telemovel": "925789540",
+      "email": "rayssaaraujo2705@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "103596",
+      "nome": "VIVIAN MORAES",
+      "morada": "RUA DO PATROCÍNIO, 113 2° ESQUERDO, 1350-229 LISBOA (Portugal)",
+      "telemovel": "912382397",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101293",
+      "nome": "MEL GIOVANNA BATISTA SILVA",
+      "morada": "RUA SÃO JOÃO DE DEUS 11A, 2495-456 FÁTIMA (Portugal)",
+      "telemovel": "929222745",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "110765",
+      "nome": "ANA CAROLINA FERREIRA NOGUEIRA",
+      "morada": "LARGO DAS OLARIAS N.11 3A, 3000-301 COIMBRA (Portugal)",
+      "telemovel": "968862821",
+      "email": "a.carolinaff@icloud.com"
+    },
+    {
+      "ship2uRecipientId": "118189",
+      "nome": "RAQUEL BARTZ ALVES",
+      "morada": "RUA DOM MANUEL II, 335 - CASA 03, 4445-090 ALFENA (Portugal)",
+      "telemovel": "936496090",
+      "email": "raquel.bartz@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122285",
+      "nome": "BRUNA RIBEIRO DA SILVA VIANA",
+      "morada": "AVENIDA CONDE 6220, CASA A, 4465-095 SÃO MAMEDE DE INFESTA (Portugal)",
+      "telemovel": "914133860",
+      "email": "bruna.ribeiro99@outlook.com"
+    },
+    {
+      "ship2uRecipientId": "110766",
+      "nome": "CINTIA OLIVEIRA",
+      "morada": "RUA ANIBAL C ROSADO LT 4, 2° ESQUERDO, 2°ANDAR, 2540-063 BOMBARRAL (Portugal)",
+      "telemovel": "962519513",
+      "email": "cintiavelasco1603@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100527",
+      "nome": "REBECCA SILVA",
+      "morada": "RUA DOS SISMEIROS 22 R/C C, 2410-016 LEIRIA (Portugal)",
+      "telemovel": "911548506",
+      "email": "beccaguatura@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101295",
+      "nome": "GIOVANNA ARAÚJO DE SOUZA",
+      "morada": "RUA PROFESSOR DOUTOR FRANCISCO DE SOUSA LÉ, 48, 3750-600 MACINHATA DO VOUGA (Portugal)",
+      "telemovel": "932147713",
+      "email": "giovanna.araujo.souza@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "101296",
+      "nome": "ROBERTA DE OLIVEIRA FREITAS SILVA",
+      "morada": "AVENIDA DA RAPOSEIRA 248 - TELHADO -  VILA NOVA DE FAMALICÃO, 4770-781 AVIDOS (Portugal)",
+      "telemovel": "967781269",
+      "email": "robertapatty@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "103600",
+      "nome": "MICAELE SILVA",
+      "morada": "AVENIDA DOS FERROVIÁRIOS, LT 81B - ANDAR 1 C, 2955-409 PINHAL NOVO (Portugal)",
+      "telemovel": "913611546",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "122288",
+      "nome": "MARIANA MOREIRA",
+      "morada": "RUA DOUTOR MÁRIO SACRAMENTO 57 4 DIREITO TRAS, 3810-104 AVEIRO (Portugal)",
+      "telemovel": "966456678",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101297",
+      "nome": "RENATA XAVIER  BARBOSA",
+      "morada": "RUA HIGINO FERREIRA DE MACEDO 46 1C, 4760-103 VILA NOVA DE FAMALICÃO (Portugal)",
+      "telemovel": "937199754",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "103601",
+      "nome": "RAFAELA DE SOUZA OLIVEIRA",
+      "morada": "RUA DO COMANDANTE ROCHA E CUNHA, 164 - 1 ESQUERDO, 3800-134 AVEIRO (Portugal)",
+      "telemovel": "935181841",
+      "email": "rafaelaoliveira3544@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "110769",
+      "nome": "ELISA MARQUES SILVA",
+      "morada": "RUA TRINDADE COELHO 304, 4785-260 TROFA (Portugal)",
+      "telemovel": "931849708",
+      "email": "elisamarques10@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "101298",
+      "nome": "VIVIANE PALMEIRA",
+      "morada": "RUA DIOGO CÃO, 41 RÉS DE CHÃO - FRAÇÃO BD - MONÇÃO VIANA DO CASTELO, 4950-283 MAZEDO (Portugal)",
+      "telemovel": "961027715",
+      "email": "vivianepalmeira2010@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "118194",
+      "nome": "CRISTIANE CARDOSO",
+      "morada": "RUA CAPITAO SALGUEIRO MAIA - EDF CENTRAL BL B LOJA 01, 8125-598 QUARTEIRA (Portugal)",
+      "telemovel": "919690928",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101299",
+      "nome": "ANA LUISA SACCHI",
+      "morada": "RUA FONTE DO MUNDO 12 - SAO VICENTE, 4700-383 BRAGA (Portugal)",
+      "telemovel": "935874555",
+      "email": "analuisasacchi@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "101300",
+      "nome": "IRLANE PEREIRA DE MORAIS",
+      "morada": "RUA DA TORRINHA, E9 - 1° ESQUERDO, 2260-379 VILA NOVA DA BARQUINHA (Portugal)",
+      "telemovel": "912531662",
+      "email": "irlanedemorais@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "110772",
+      "nome": "LUANNA KERSSIA",
+      "morada": "RUA CAMB-LES-BAINS 11 2FR, 2500-326 CALDAS DA RAINHA (Portugal)",
+      "telemovel": "963124581",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "118196",
+      "nome": "JESSICA GONCALVES",
+      "morada": "RUA PADRE AUGUSTO MAIA, 13, 4 ESQUERDO B, 4420-245 GONDOMAR (Portugal)",
+      "telemovel": "910236808",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101302",
+      "nome": "GIOVANA DA CRUZ BRAZ",
+      "morada": "RUA DO BRASIL 354 SEGUNDA ANDAR À ESQUERDA, 3030-775 COIMBRA (Portugal)",
+      "telemovel": "966288021",
+      "email": "giovanacruz2510@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "104120",
+      "nome": "MARIANA ALVES",
+      "morada": "JOSE FERNANDES RIBEIRO, 41, 4740-165 BELINHO (Portugal)",
+      "telemovel": "966023943",
+      "email": "maryalvesdanca@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100794",
+      "nome": "LUANA MARTA DE SOUZA PAIVA",
+      "morada": "RUA BERNARDO SANTARENO, 2 -3 DIREITO MASSAMÁ, 2745-732 QUELUZ (Portugal)",
+      "telemovel": "935310153",
+      "email": "luana_ljp@hotimail.com"
+    },
+    {
+      "ship2uRecipientId": "118205",
+      "nome": "GABRIELLY MARQUES DEMITE",
+      "morada": "RUA HINTZE RIBEIRO, 5 RC ESQUERDO, 2790-358 QUEIJAS (Portugal)",
+      "telemovel": "926925416",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "110526",
+      "nome": "AMILLE TORRES",
+      "morada": "ABRUA DOS BARBOSAS, 173 APTO 5C, 4715-267 BRAGA (Portugal)",
+      "telemovel": "914163121",
+      "email": "torresamille1994@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98240",
+      "nome": "RAUANE DE AGUIAR QUEIMADA",
+      "morada": "RUA DIOGO DO COUTO, 13 - 3 ESQUERDO - VISTA LEGRE, 7000-923 ÉVORA (Portugal)",
+      "telemovel": "934028859",
+      "email": "rauaneaguiar@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "100801",
+      "nome": "ROBERTA OLIVEIRA",
+      "morada": "AVENIDA DA RAPOSEIRA, 248, 4770-718 TELHADO VNF (Portugal)",
+      "telemovel": "967781269",
+      "email": "robertapatt@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98242",
+      "nome": "VIVIEN PATRICIA DE ARAUJO",
+      "morada": "RUA BARATA SALGUEIRO, 2C - FABBRICA DI PASTA FRESCA, 1150-058 LISBOA (Portugal)",
+      "telemovel": "938440474",
+      "email": "vivienpatriciaabva@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "117186",
+      "nome": "MARILISA CRISTINA",
+      "morada": "RUA CONDE VALE SAO COSME, N 348, 4770-577 SÃO COSME VALE (Portugal)",
+      "telemovel": "934127808",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101828",
+      "nome": "LUANA RODRIGUES",
+      "morada": "RUA DE TIMOR, 33 - 2 ANDAR ESQUERDO, 4710-505 BRAGA (Portugal)",
+      "telemovel": "924807292",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98245",
+      "nome": "ANA  MARGARIDA SIMÕES",
+      "morada": "RUA JULIO QUEIJEIRO, N6 - 3DTO - JARDIM DE CIMA, 2005-283 SANTARÉM (Portugal)",
+      "telemovel": "918929067",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101829",
+      "nome": "ANDRESSA FERREIRA SANTOS",
+      "morada": "RUA LUÍS ANTÔNIO CORREIA, 10 - 3 DTO TRÁS - NOGUEIRO, 4715-310 BRAGA (Portugal)",
+      "telemovel": "962993247",
+      "email": "dessa_ferreira15@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "119237",
+      "nome": "MARIANE LACERDA",
+      "morada": "ESTRADA DA CIRCUNVALACAO 16002, 4450-100 MATOSINHOS (Portugal)",
+      "telemovel": "924331466",
+      "email": "marianedelcerda@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "101832",
+      "nome": "RAFAELI CRISTINA DE OLIVEIRA",
+      "morada": "RUA ALCINO DE ARAÚJO, 41, 4410-218 SÃO FELIX DA MARINHA (Portugal)",
+      "telemovel": "925834761",
+      "email": "rafaelicrisoliveira@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98249",
+      "nome": "THAIUANE FRANÇA DE AZEVEDO",
+      "morada": "HERDADE MONTE NOVO E FIGUEIRINHA, 7800-740 SÃO BRISSOS (Portugal)",
+      "telemovel": "925558752",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101833",
+      "nome": "YARA DE SOUSA QUEIROZ",
+      "morada": "E.N 120 - BOMBA DE COMBUSTIVEL GALP, 8600-324 LAGOS (Portugal)",
+      "telemovel": "933838943",
+      "email": "yanoah12@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "96459",
+      "nome": "MIRELLA CRISTINA MENDES DA SILVA",
+      "morada": "RUA DOS CASAIS DA RIBEIRA, 13 - PORTÃO PRETO, 2500-144 CALDAS DA RAINHA (Portugal)",
+      "telemovel": "914417407",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "96461",
+      "nome": "BARBARA ASSIS",
+      "morada": "RUA DO HEROÍSMO, 302 - CASA 4, 4300-259 PORTO (Portugal)",
+      "telemovel": "912460722",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "131021",
+      "nome": "GABRIELE SOUZA",
+      "morada": "RUA DE MACAU 20, 1 E, 2700-540 AMADORA (Portugal)",
+      "telemovel": "960163229",
+      "email": "grazii-l@live.com"
+    },
+    {
+      "ship2uRecipientId": "96462",
+      "nome": "BARBARA ASSIS",
+      "morada": "RUA DO HEROÍSMO, 302 - CASA 4, 4300-259 PORTO (Portugal)",
+      "telemovel": "912460722",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "122062",
+      "nome": "MARIA LUIZA SILVERA LOPES SANTANA",
+      "morada": "RUA AQUILINO RIBEIRO LOTE A 1B, 3020-096 COIMBRA (Portugal)",
+      "telemovel": "911789602",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "131023",
+      "nome": "GABRIELE SOUZA",
+      "morada": "RUA DE MACAU 20, 1 E, 2700-540 AMADORA (Portugal)",
+      "telemovel": "960163229",
+      "email": "grazii-l@live.com"
+    },
+    {
+      "ship2uRecipientId": "96464",
+      "nome": "SONIA SILVA SALGADO",
+      "morada": "RUJA DO CRUZEIRO, 112O, 5000-033 ANDRÃES (Portugal)",
+      "telemovel": "911930203",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "101841",
+      "nome": "CINTHIA MILET",
+      "morada": "RUA CÂNDIDO DE OLIVEIRA, 7 - LISBOA, 2760-123 CAXIAS (Portugal)",
+      "telemovel": "933883001",
+      "email": "cinthiamilet@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "96466",
+      "nome": "LIGIANE COSTA",
+      "morada": "RUA RAUL BRANDÃO, 240, 4785-135 TROFA (Portugal)",
+      "telemovel": "910041379",
+      "email": "ligianerahamim@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122068",
+      "nome": "JAKCIANE FREIRE",
+      "morada": "RUA 25 DE ABRIL 44, 3 ESQ, 2330-090 ENTRONCAMENTO (Portugal)",
+      "telemovel": "963456542",
+      "email": "freirecontas@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "110805",
+      "nome": "LARISSA ANDRIELLE",
+      "morada": "R. D, JC PNEUS - ZONA INDUSTRIAL, 5370-565 MIRANDELA (Portugal)",
+      "telemovel": "965284910",
+      "email": "silvalare64@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "105686",
+      "nome": "GESSICA FARIAS",
+      "morada": "RUA DO FUNCHAL, N 39, 2B, 2500-178 CALDAS DA RAINHA (Portugal)",
+      "telemovel": "925897802",
+      "email": "fariasgessica55@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "95191",
+      "nome": "OLGA FERNANDES",
+      "morada": "CACIFO LOCKY LIDL AMADORA VENDA NOVA, CACIFO - R JOÃO DE DEUS (EXTERIOR DA LOJA, DO LADO DIREITO DA ENTRADA), 2703-304 AMADORA (Portugal)",
+      "telemovel": "968764831",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "94168",
+      "nome": "HR Store",
+      "morada": "RUA DE GENERAL TORRES, 1220 PISO -1, LOJA 40, 4400-164 VILA NOVA DE GAIA (Portugal)",
+      "telemovel": "913709730",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "122072",
+      "nome": "STEFANI DE SOUZA",
+      "morada": "RUA QUINTA DA ARMADA 40, 2 ESQ FRENTE, 4710-340 BRAGA (Portugal)",
+      "telemovel": "925509373",
+      "email": "steefanii.94@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98265",
+      "nome": "LILIAN CRUZ",
+      "morada": "RUA DA AREEIRA, 226, 4490-037 PÓVOA DE VARZIM (Portugal)",
+      "telemovel": "962898721",
+      "email": "lilianvazcruz@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "116441",
+      "nome": "TAMIRIS MOREIRA",
+      "morada": "RUA CONSELHEIRO RODRIGUES BASTOS 54 C3, 3750-805 VALONGO DO VOUGA (Portugal)",
+      "telemovel": "925735476",
+      "email": "tamirismoreira5@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122073",
+      "nome": "DARDANYA BORGES",
+      "morada": "RUA VITOR FERNANDES CARREIRA 73, 3105-098 GUIA PBL (Portugal)",
+      "telemovel": "924270875",
+      "email": "dardanyaarborges@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "98267",
+      "nome": "HELOISA COUTINHO",
+      "morada": "AVENIDA MENERES, 234 - BLOCO 3 / APTO 3 FRENTE-DRTO, 4450-189 MATOSINHOS (Portugal)",
+      "telemovel": "964477898",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "116443",
+      "nome": "NIRIS CAROLINE",
+      "morada": "RUA PRINCIPAL  138, 3105-044 CARNIDE (Portugal)",
+      "telemovel": "911554038",
+      "email": "niriscaroline@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "95197",
+      "nome": "SALMA",
+      "morada": "RUA ALFREDO DA COSTA, N4, 6D ODIVELAS, 2675-634 ODIVELAS (Portugal)",
+      "telemovel": "967176392",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "96478",
+      "nome": "DEISE PIRES",
+      "morada": "RUA GEROS, BLOCO 1 - APTO 502 SÃO PEDRO DO SUL, 3660-688 VÁRZEA SPS (Portugal)",
+      "telemovel": "927711014",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98271",
+      "nome": "CLEO SILVA",
+      "morada": "RUA 9 DE ABRIL, CASA 8, 2025-355 AMIAIS DE BAIXO (Portugal)",
+      "telemovel": "926928401",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "96480",
+      "nome": "ROBERTA EMIDIO",
+      "morada": "AV. VASCO DA GAMA, 140 - 8 ANDAR SUL/POENTE, 4490-410 PÓVOA DE VARZIM (Portugal)",
+      "telemovel": "926251112",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "98273",
+      "nome": "FERNANDA GUEDES",
+      "morada": "RUA TRINDADE COELHO, 14-11, 2950-580 QUINTA DO ANJO (Portugal)",
+      "telemovel": "914686634",
+      "email": "fefeguedes@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "99299",
+      "nome": "MARIANA ALVES",
+      "morada": "RUA 24 DE AGOSTO - ESTOFOS MARANHÃO, 4740-511 MAR (Portugal)",
+      "telemovel": "966023943",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "100067",
+      "nome": "ALANA DE OLIVEIRA INOCENCIO SALES",
+      "morada": "AVENIDA INFANTE DOM HENRIQUE 24, 3 ESQ FRENTE, 2910-529 SETÚBAL (Portugal)",
+      "telemovel": "938452113",
+      "email": "alanasales2022@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "106979",
+      "nome": "MARIANA ORDANI LOPES",
+      "morada": "RUA DR. EMÍDEO GUILHERME GARCIA MENDES, N. 11, 3º ESQ., 2845-608 AMORA (Portugal)",
+      "telemovel": "939422873",
+      "email": "mari.ordani@hotmail.com"
+    },
+    {
+      "ship2uRecipientId": "99301",
+      "nome": "RAQUEL FERNANDES DA COSTA",
+      "morada": "RUA COLUMBANO 98, 1 ANDAR, 3700-086 SÃO JOÃO DA MADEIRA (Portugal)",
+      "telemovel": "962145905",
+      "email": "raquelfernandesdacostaa@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "95718",
+      "nome": "MADYANE METEUS DE JESUS",
+      "morada": "RUA JOSE ALVES REDOL, 18, 7780-143 CASTRO VERDE (Portugal)",
+      "telemovel": "932792597",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "99302",
+      "nome": "RAQUEL FERNANDES DA COSTA",
+      "morada": "RUA COLUMBANO 98, 1 ANDAR, 3700-086 SÃO JOÃO DA MADEIRA (Portugal)",
+      "telemovel": "962145905",
+      "email": "raquelfernandesdacostaa@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100070",
+      "nome": "KAMILLA COSTA BATISTA DA SILVA",
+      "morada": "RUA DE CURVOS N19 - ESPOSENDE, 4740-181 CURVOS (Portugal)",
+      "telemovel": "933639050",
+      "email": "kamillacst20@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "99047",
+      "nome": "NEIA ISQUERDO",
+      "morada": "RUA DE SANTO ANDRÉ, N9 - 1 A DIREITO, 4710-308 BRAGA (Portugal)",
+      "telemovel": "936653932",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "99303",
+      "nome": "RAISSA TAVARES",
+      "morada": "R. DE SÃO GENS 2835, 1 FRENTE, 4460-282 SENHORA DA HORA (Portugal)",
+      "telemovel": "912505700",
+      "email": "raissaqueiroz17@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "100071",
+      "nome": "KAMILLA COSTA BATISTA DA SILVA",
+      "morada": "RUA DE CURVOS N19 - ESPOSENDE, 4740-181 CURVOS (Portugal)",
+      "telemovel": "933639050",
+      "email": "kamillacst20@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "95723",
+      "nome": "VANESSA DE RENZO RODRIGUES",
+      "morada": "RUA CASAL DO CONDE, N5. APTO 3 ESQ - S. JOÃO BAPTISTA, 2330-522 ENTRONCAMENTO (Portugal)",
+      "telemovel": "910389901",
+      "email": "vanessarenzo@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "99051",
+      "nome": "DEBORA DE MATOS SADLER",
+      "morada": "RUA FONTE DO SALGUEIRO, 11 - ÁGUEDA, 3750-351 BARRÔ AGD (Portugal)",
+      "telemovel": "927509804",
+      "email": "deborasadler5@icloud.com"
+    },
+    {
+      "ship2uRecipientId": "100075",
+      "nome": "KAMILLA COSTA BATISTA DA SILVA",
+      "morada": "RUA DE CURVOS N19 - ESPOSENDE, 4740-181 CURVOS (Portugal)",
+      "telemovel": "933639050",
+      "email": "kamillacst20@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "99052",
+      "nome": "PRISCILA GUIMARES",
+      "morada": "RUA DE PENA BOA, 79 - VILA NOVA DE FAMALICAO, 4760-692 OUTIZ (Portugal)",
+      "telemovel": "910779757",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "99055",
+      "nome": "PRISCILA ALMEIDA",
+      "morada": "RUA DE SÃO GENS, 2827 - APTO G, 4460-409 SENHORA DA HORA (Portugal)",
+      "telemovel": "927665086",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "100079",
+      "nome": "CAMILA DEL ANGELO BAPTISTA",
+      "morada": "RUA PROFESSOR FERNANDO MAGANO 140A 3 TRASEIRA - RAMALDE, 4250-541 PORTO (Portugal)",
+      "telemovel": "913880375",
+      "email": "kmilabaptista@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "95728",
+      "nome": "ANNANDA MARTINS OLIVEIRA",
+      "morada": "AVENIDA DA REPÚBLICA, 676. 1 ESQUERDO, 4450-238 MATOSINHOS (Portugal)",
+      "telemovel": "931319522",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "100081",
+      "nome": "VANESSA VIANA CONTE",
+      "morada": "RUA QUINTA DE ABRAAO 12 RES CHAO DIREITO FRENTE, 4705-672 BRAGA (Portugal)",
+      "telemovel": "925010500",
+      "email": "vanessavianaconte@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "133875",
+      "nome": "LUCIA RODRIGUES",
+      "morada": "RUA DA VOLTINHA 1 - VENTOSA, 3350-029 ARRIFANA PRS (Portugal)",
+      "telemovel": "932451183",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "95475",
+      "nome": "JULIANA GUTIERRES PENNA",
+      "morada": "RUA JOSE DA CUNHA, 23 - APTO 1G - GUALTAR, 4710-916 BRAGA (Portugal)",
+      "telemovel": "911185957",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "109555",
+      "nome": "LILIAN LAVEZO",
+      "morada": "RUA ILHA DO FAIAL, 7 - APTO 4E, 1675-127 PONTINHA (Portugal)",
+      "telemovel": "936263890",
+      "email": "lililavezo@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "119539",
+      "nome": "FERNANDA GUEDES",
+      "morada": "RUA TRINDADE COELHO 14-11, 2950-580 QUINTA DO ANJO (Portugal)",
+      "telemovel": "914686634",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "133877",
+      "nome": "PAMELA ALVARES",
+      "morada": "RUA CANDIDO DOS REIS 51 RC A, 2700-148 AMADORA (Portugal)",
+      "telemovel": "+351927067847",
+      "email": "professorapamella@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122613",
+      "nome": "BEATRIZ CARVALHO",
+      "morada": "RUA DA FRATERNIDADE LOTE 18 - LOTE 18 RES DE CHÃO ESQD, 2130-231 BENAVENTE (Portugal)",
+      "telemovel": "938850841",
+      "email": "beatrizcarvalho.smoura@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "133878",
+      "nome": "PAMELA ALVARES",
+      "morada": "RUA CÂNDIDO DOS REIS 51 RC A, 2700-143 AMADORA (Portugal)",
+      "telemovel": "+351927067847",
+      "email": "professorapamella@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "133880",
+      "nome": "PAMELA ALVARES",
+      "morada": "RUA CÂNDIDO DOS REIS 51 RC A, 2700-143 AMADORA (Portugal)",
+      "telemovel": "927067847",
+      "email": "professorapamella@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "122618",
+      "nome": "RAFAELA VIEIRA",
+      "morada": "RUA JOSE PEDROSA DE AGOSTINHO, NUM 5, 2425-458 COIMBRÃO (Portugal)",
+      "telemovel": "939549970",
+      "email": "rafaelavfb@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "107515",
+      "nome": "DANIELLE PINTO",
+      "morada": "321 CRÉDITO  - AV BOA VISTA 764, 4100-111 PORTO (Portugal)",
+      "telemovel": "912240706",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "100092",
+      "nome": "VANESSA TCHERNEV MAIORINO",
+      "morada": "RUA SOBRE O DOURO 177 CASA 24 - MASSARELLOS, 4050-592 PORTO (Portugal)",
+      "telemovel": "922279182",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "103932",
+      "nome": "MILENE MUNIZ DE SOUSA",
+      "morada": "R RAINHA DONA LEONOR 229 - 1DTO, 1675-258 PONTINHA (Portugal)",
+      "telemovel": "931736947",
+      "email": "milenesousa879@gmail.com"
+    },
+    {
+      "ship2uRecipientId": "133885",
+      "nome": "STEFANY SOUZA",
+      "morada": "RUA DR ADELINO MESQUITA N14 3DTO, 3090-495 PAIÃO (Portugal)",
+      "telemovel": "931468052",
+      "email": ""
+    },
+    {
+      "ship2uRecipientId": "95742",
+      "nome": "LAYSA BYRRO",
+      "morada": "CALLE PUERTA NUEVA, 38. PISO 2 - BURGOS, 09400 ARANDA DE DUERO (Portugal)",
+      "telemovel": "914928910",
+      "email": ""
+    }
+  ]
+}

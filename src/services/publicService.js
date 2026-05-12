@@ -184,7 +184,8 @@ class PublicService {
     }
 
     const { rows: cust } = await db.query(
-      `SELECT id, full_name, email FROM customers WHERE whatsapp_number = $1`,
+      `SELECT id, full_name, email, postal_code, city, district, country
+         FROM customers WHERE whatsapp_number = $1`,
       [wa],
     );
     if (!cust[0]) {
@@ -194,6 +195,7 @@ class PublicService {
         full_name: null,
         email: null,
         saved_addresses: [],
+        customer_profile: null,
       };
     }
 
@@ -227,12 +229,25 @@ class PublicService {
       };
     });
 
+    const c0 = cust[0];
+    const hasProfileLoc =
+      (c0.postal_code && String(c0.postal_code).trim()) || (c0.city && String(c0.city).trim());
+    const customer_profile = hasProfileLoc
+      ? {
+          postal_code: c0.postal_code ? String(c0.postal_code).trim() : null,
+          city: c0.city ? String(c0.city).trim() : null,
+          district: c0.district ? String(c0.district).trim() : null,
+          country: (c0.country && String(c0.country).trim().toUpperCase().slice(0, 2)) || 'PT',
+        }
+      : null;
+
     return {
       whatsapp_number: wa,
       customer_found: true,
       full_name: cust[0].full_name,
       email: cust[0].email,
       saved_addresses,
+      customer_profile,
     };
   }
 
@@ -382,7 +397,15 @@ class PublicService {
     // Mantemos `address` legado (free-form) — quando não for enviado, montamos
     // um a partir dos campos estruturados para compatibilidade com WhatsApp.
     const country = (customer.country || 'PT').trim().toUpperCase().slice(0, 2);
-    const postalCode = (customer.postal_code || '').trim().slice(0, 20) || null;
+    let postalCode = (customer.postal_code || '').trim().slice(0, 20) || null;
+    if (country === 'ES' && postalCode) {
+      const es = postalCode.replace(/\D/g, '').slice(0, 5);
+      if (es.length === 5) postalCode = es;
+    }
+    if (country === 'MC' && postalCode) {
+      const mc = postalCode.replace(/\D/g, '').slice(0, 5);
+      if (mc.length === 5) postalCode = mc;
+    }
     const city = (customer.city || '').trim().slice(0, 150) || null;
     const district = (customer.district || '').trim().slice(0, 120) || null;
     const phone = (customer.phone || '').replace(/\s/g, '').slice(0, 20) || null;

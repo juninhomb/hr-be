@@ -41,6 +41,12 @@ function getStripeOrThrow() {
   return s;
 }
 
+/** Nome no Checkout Stripe: só o nome na ficha do produto — sem tamanho, sem SKU ao cliente. */
+function buildStripeProductDisplayName(productName) {
+  const base = String(productName ?? '').trim();
+  return (base || 'Artigo').slice(0, 120);
+}
+
 /**
  * Mensagem útil para o operador / cliente quando sessions.create falha.
  * @param {unknown} stripeErr
@@ -142,7 +148,8 @@ async function createSessionForOrder({ orderId, customerEmail, successUrl, cance
 
   const { rows: lines } = await db.query(
     `
-    SELECT oi.sku, oi.quantity, oi.unit_price, COALESCE(p.name, oi.sku) AS product_name
+    SELECT oi.sku, oi.quantity, oi.unit_price,
+           COALESCE(p.name, oi.sku) AS product_name
       FROM order_items oi
       LEFT JOIN product_variants v ON v.id = oi.variant_id
       LEFT JOIN products p ON p.id = v.product_id
@@ -180,22 +187,17 @@ async function createSessionForOrder({ orderId, customerEmail, successUrl, cance
       },
     ];
   } else {
-    line_items = lines.map((row) => {
-      const unit = Number(row.unit_price);
-      const cents = Math.round(unit * 100);
-      const label = String(row.product_name || row.sku).slice(0, 120);
-      return {
-        quantity: row.quantity,
-        price_data: {
-          currency: 'eur',
-          unit_amount: cents,
-          product_data: {
-            name: `${label} (${row.sku})`,
-            metadata: { sku: row.sku },
-          },
+    line_items = lines.map((row) => ({
+      quantity: row.quantity,
+      price_data: {
+        currency: 'eur',
+        unit_amount: Math.round(Number(row.unit_price) * 100),
+        product_data: {
+          name: buildStripeProductDisplayName(row.product_name),
+          metadata: { sku: row.sku },
         },
-      };
-    });
+      },
+    }));
   }
 
   if (shippingFee > 0.009) {

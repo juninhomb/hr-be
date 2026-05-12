@@ -19,7 +19,10 @@ class DashboardService {
         (SELECT COALESCE(SUM(total_amount), 0)::float
            FROM orders
           WHERE status IN ('pago','expedido','enviado','entregue')
-            AND created_at >= CURRENT_DATE - INTERVAL '30 days') AS revenue_30d,
+            AND (created_at::date) >= (date_trunc('month', CURRENT_DATE)::date)
+            AND (created_at::date) < ((date_trunc('month', CURRENT_DATE) + INTERVAL '1 month')::date)
+        ) AS revenue_current_month,
+        ((date_trunc('month', CURRENT_DATE)::date)::text) AS stats_month_anchor,
         (SELECT COUNT(*)::int FROM product_variants
           WHERE stock_quantity BETWEEN 1 AND 5) AS low_stock_count,
         (SELECT COUNT(*)::int FROM product_variants WHERE stock_quantity = 0) AS out_of_stock_count,

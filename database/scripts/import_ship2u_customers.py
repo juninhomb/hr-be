@@ -4,7 +4,9 @@ Import Ship2u address-book JSON into PostgreSQL evolution_db.customers.
 
 Mapeamento JSON → BD:
   nome → full_name (capitalização PT, até 255 chars)
-  morada → address
+  morada → address (linha da rua) + postal_code + city + country
+           PT: código XXXX-XXX. ES/MC: código de 5 dígitos antes da localidade.
+           Sem código reconhecível: morada inteira em address e country PT (legado BD).
   telemovel → whatsapp_number (dígitos; PT 9→351… ; UNIQUE + CHECK 10–15)
   email → email (opcional, válido ou NULL)
 
@@ -167,6 +169,55 @@ def sql_quote(s: str | None) -> str:
     return "'" + t + "'"
 
 
+def split_ship2u_address(morada_raw: str) -> tuple[str, str | None, str | None, str]:
+    """
+    Extrai morada estruturada e país (ISO2).
+    1) Código postal PT \\d{4}-\\d{3} → country PT
+    2) Sem PT: último código de 5 dígitos → ES ou MC (Mónaco em "Monaco"/98000)
+    3) Caso contrário → texto completo titulado, sem CP, country PT
+    """
+    s = " ".join((morada_raw or "").strip().split())
+    if not s:
+        return "", None, None, "PT"
+    ms = list(re.finditer(r"\b(\d{4}-\d{3})\b", s))
+    if ms:
+        last = ms[-1]
+        cp = last.group(1)
+        street = s[: last.start()].rstrip(",").strip()
+        tail = s[last.end() :].strip().lstrip(",").strip()
+        tail = re.sub(r"\s*\([^)]*[Pp]ortugal[^)]*\)\s*$", "", tail).strip()
+        tail = re.sub(r"\s*\(PT\)\s*$", "", tail, flags=re.I).strip()
+        tail = tail.rstrip(",").strip()
+        city = tail if tail else None
+        if not street:
+            return title_pt_words(s), None, None, "PT"
+        return (
+            title_pt_words(street),
+            cp,
+            title_pt_words(city) if city else None,
+            "PT",
+        )
+    ms5 = list(re.finditer(r"\b(\d{5})\b", s))
+    if ms5:
+        last = ms5[-1]
+        cp = last.group(1)
+        street = s[: last.start()].rstrip(",").strip()
+        tail = s[last.end() :].strip().lstrip(",").strip()
+        tail = re.sub(r"\s*\([^)]*[Pp]ortugal[^)]*\)\s*$", "", tail).strip()
+        tail = re.sub(r"\s*\(PT\)\s*$", "", tail, flags=re.I).strip().rstrip(",").strip()
+        city = tail if tail else None
+        if street and city:
+            cl = city.lower()
+            cc = "MC" if ("monaco" in cl) or cp == "98000" else "ES"
+            return (
+                title_pt_words(street),
+                cp,
+                title_pt_words(city) if city else None,
+                cc,
+            )
+    return title_pt_words(s), None, None, "PT"
+
+
 def row_from_json_item(item: dict[str, Any]) -> dict[str, Any]:
     nome_raw = item.get("nome") or ""
     morada_raw = item.get("morada") or ""
@@ -175,7 +226,7 @@ def row_from_json_item(item: dict[str, Any]) -> dict[str, Any]:
     mail, mail_warn = clean_email(item.get("email"))
 
     fname = title_pt_name(nome_raw)
-    addr = title_pt_words(morada_raw)
+    addr_line, postal_code, city, country = split_ship2u_address(morada_raw)
     # limite BD
     if len(fname) > 255:
         fname = fname[:255]
@@ -185,10 +236,14 @@ def row_from_json_item(item: dict[str, Any]) -> dict[str, Any]:
         "full_name": fname,
         "whatsapp_number": wa,
         "email": mail,
-        "address": addr,
+        "address": addr_line,
+        "postal_code": postal_code,
+        "city": city,
+        "country": country,
         "_mail_warn": mail_warn,
         "_nome_raw": nome_raw,
         "_tel_raw": tel_raw,
+        "_morada_raw": morada_raw,
     }
 
 
@@ -203,9 +258,13 @@ def merge_dupes(rows: list[dict[str, Any]]) -> dict[str, Any]:
         if r.get("email"):
             emails.append(r["email"])
     longest_name = max(rows, key=lambda x: len((x["full_name"] or "")))["full_name"]
-    longest_addr = max(rows, key=lambda x: len((x["address"] or "")))["address"]
+    longest_morada = max(rows, key=lambda x: len((x.get("_morada_raw") or ""))).get("_morada_raw") or ""
+    addr_line, postal_code, city, country = split_ship2u_address(longest_morada)
     base["full_name"] = longest_name
-    base["address"] = longest_addr
+    base["address"] = addr_line
+    base["postal_code"] = postal_code
+    base["city"] = city
+    base["country"] = country
     base["email"] = emails[0] if emails else None
     ids = ",".join(str(r["ship2uRecipientId"]) for r in rows)
     base["_merged_from"] = ids
@@ -235,16 +294,19 @@ def bundle_by_whatsapp(parsed: list[dict[str, Any]]) -> tuple[list[dict[str, Any
 def build_sql(rows: list[dict[str, Any]]) -> str:
     lines = [
         "BEGIN;",
-        "-- Import Ship2u → customers (full_name, address, whatsapp_number, email)",
+        "-- Import Ship2u → customers (full_name, address, whatsapp_number, email, postal_code, city, country)",
     ]
     for r in rows:
         fname = sql_quote(r["full_name"]) if r.get("full_name") else sql_quote("")
         wa = sql_quote(r["whatsapp_number"])
         addr = sql_quote(r.get("address"))
         mail = sql_quote(r.get("email"))
+        pc = sql_quote(r.get("postal_code"))
+        cit = sql_quote(r.get("city"))
+        cc = sql_quote(r.get("country") or "PT")
         lines.append(
-            "INSERT INTO customers (full_name, whatsapp_number, email, address) "
-            f"VALUES ({fname}, {wa}, {mail}, {addr}) "
+            "INSERT INTO customers (full_name, whatsapp_number, email, address, postal_code, city, country) "
+            f"VALUES ({fname}, {wa}, {mail}, {addr}, {pc}, {cit}, {cc}) "
             "ON CONFLICT (whatsapp_number) DO UPDATE SET "
             "full_name = CASE "
             "WHEN trim(COALESCE(EXCLUDED.full_name,'')) <> '' THEN EXCLUDED.full_name "
@@ -252,6 +314,18 @@ def build_sql(rows: list[dict[str, Any]]) -> str:
             "address = CASE "
             "WHEN trim(COALESCE(EXCLUDED.address,'')) <> '' THEN EXCLUDED.address "
             "ELSE customers.address END, "
+            "postal_code = CASE "
+            "WHEN trim(COALESCE(EXCLUDED.postal_code::text,'')) <> '' THEN EXCLUDED.postal_code "
+            "ELSE customers.postal_code END, "
+            "city = CASE "
+            "WHEN trim(COALESCE(EXCLUDED.city,'')) <> '' THEN EXCLUDED.city "
+            "ELSE customers.city END, "
+            "country = CASE "
+            "WHEN trim(COALESCE(EXCLUDED.country::text,'')) <> '' THEN EXCLUDED.country "
+            "ELSE customers.country END, "
+            "district = CASE "
+            "WHEN UPPER(trim(COALESCE(EXCLUDED.country::text,''))) IN ('ES', 'MC') THEN NULL "
+            "ELSE customers.district END, "
             "email = CASE "
             "WHEN trim(COALESCE(EXCLUDED.email,'')) <> '' THEN EXCLUDED.email "
             "ELSE COALESCE(customers.email, EXCLUDED.email) END;",

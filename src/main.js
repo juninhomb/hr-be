@@ -170,6 +170,11 @@ app.use(errorHandler);
 // ==========================================
 const PORT = process.env.PORT || 3001;
 
+if (!String(process.env.DATABASE_URL || '').trim()) {
+  console.error('🛑 DATABASE_URL em falta. Define a connection string PostgreSQL no .env (ver .env.example).');
+  process.exit(1);
+}
+
 // Validação fail-fast de variáveis críticas. Sem JWT_SECRET o login emite
 // tokens com `undefined` como segredo (jsonwebtoken faz throw runtime no
 // primeiro pedido) — preferimos parar aqui e dar mensagem clara.
@@ -203,4 +208,12 @@ app.listen(PORT, '0.0.0.0', () => {
   🌐 Endpoints públicos:    /api/public/*
   ==============================================
   `);
+  console.log(`A escuta em http://0.0.0.0:${PORT} — mantém este terminal aberto (Ctrl+C para parar).`);
+}).on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`🛑 Porta ${PORT} já está em uso. Para o outro processo (ex.: outro "node src/main.js" ou PM2) ou muda PORT no .env.`);
+  } else {
+    console.error('🛑 Falha ao abrir o servidor HTTP:', err.message || err);
+  }
+  process.exit(1);
 });

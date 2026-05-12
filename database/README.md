@@ -79,6 +79,18 @@ psql evolution_db -f database/queries.sql
 
 ## 🚀 Quick Start
 
+### 0. **PostgreSQL local (DEV) — instância nova no servidor que já tens**
+Na raiz do backend (`hr-be`), com `psql` no PATH e permissões de superuser no cluster local:
+
+```bash
+export PGADMIN_URL='postgresql://postgres@127.0.0.1:5432/postgres'   # ou o teu admin
+npm run db:create-local    # cria role + base hrstore_dev (configurável por env)
+npm run db:bootstrap       # schema.sql + database/migrations/*.sql
+npm run db:verify          # confirma tabelas/colunas que o backend usa
+```
+
+Detalhes: `scripts/db-create-local-dev.sh`. A `DATABASE_URL` de exemplo está em `.env.example`.
+
 ### 1. **Criar o banco do zero**
 ```bash
 cd /root/hrstore-backend

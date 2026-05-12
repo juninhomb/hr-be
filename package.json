@@ -1,8 +1,14 @@
 {
   "name": "hrstore-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/main.js",
   "scripts": {
+    "start": "node src/main.js",
+    "dev": "NODE_ENV=development node src/main.js",
+    "db:create-local": "bash scripts/db-create-local-dev.sh",
+    "db:bootstrap": "bash scripts/db-bootstrap-local.sh",
+    "db:verify": "node scripts/verify-db-schema.js",
+    "smoke": "node scripts/smoke-local.js",
     "playwright:ship2u": "playwright test playwright/ship2u-address-book.spec.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:postal-data": "node scripts/build-pt-postal-lookup.js",

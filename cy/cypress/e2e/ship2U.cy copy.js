@@ -1,3 +1,7 @@
+/**
+ * Cópia de referência (não é spec activo — o nome tem espaço e não entra no glob *.cy.js).
+ * Ver `ship2U.cy.js` para o fluxo em produção com RECIPIENT_FILE + realClick.
+ */
 describe('Ship2U', () => {
   const LOGIN_URL = 'https://ship2u.pt/en/customer-account/login'
 
@@ -150,7 +154,6 @@ describe('Ship2U', () => {
             .trigger('change', { force: true })
             .trigger('blur', { force: true })
 
-          // Submeter: preferir o botão principal do modal (várias línguas / labels).
           cy.get('#modal-remote-xl').within(() => {
             cy.get('button[type="submit"]:visible')
               .should('have.length.at.least', 1)
@@ -166,8 +169,6 @@ describe('Ship2U', () => {
               })
           })
 
-          // Crítico: o backend só deve reportar sucesso se isto passar.
-          // Sem isto, o Cypress terminava com 0 mesmo sem envio criado na Ship2U.
           cy.get('html', { timeout: 120000 }).should(($html) => {
             const $modal = $html.find('#modal-remote-xl')
             const el = $modal[0]

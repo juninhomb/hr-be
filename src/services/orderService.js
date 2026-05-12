@@ -4,6 +4,10 @@ const emailService = require('./emailService');
 const { resolveCoupon } = require('../utils/discountCoupons');
 const { buildAdminPdvStripeCheckoutUrls } = require('../utils/stripeCheckoutRedirects');
 const stripeCheckoutService = require('./stripeCheckoutService');
+const {
+  canonicalWhatsappNumber,
+  nationalNumberDigitsForIntlE164,
+} = require('../utils/whatsappNormalize');
 
 function itemsPlusShippingMinusDiscount(itemsTotal, discountAmount, shippingFee) {
   const disc = Math.round(Number(discountAmount || 0) * 100) / 100;
@@ -967,10 +971,24 @@ class OrderService {
       const address = String(row.address || '').trim();
       const postal_code = String(row.postal_code || '').trim();
       const rawPhone = row.phone != null ? String(row.phone).trim() : '';
-      const digits = rawPhone.replace(/\D/g, '');
-      let phone = digits;
-      if (phone && !phone.startsWith('351') && phone.length === 9) {
-        phone = `351${phone}`;
+      const defaultCountry =
+        String(row.customer_country || 'PT')
+          .trim()
+          .toUpperCase()
+          .slice(0, 2) || 'PT';
+      let phone = '';
+      if (rawPhone) {
+        const intl = canonicalWhatsappNumber(rawPhone, defaultCountry);
+        phone =
+          intl && /^[0-9]{10,15}$/.test(intl)
+            ? nationalNumberDigitsForIntlE164(intl)
+            : rawPhone.replace(/\D/g, '');
+      }
+      // Ship2U / expedição via integração: só Portugal; o formulário espera dígitos nacionais sem 351.
+      if (defaultCountry === 'PT' && phone) {
+        while (phone.startsWith('351') && phone.length > 9) {
+          phone = phone.slice(3);
+        }
       }
       return { full_name, email, address, postal_code, phone };
     };
@@ -984,7 +1002,8 @@ class OrderService {
                c.email AS email,
                COALESCE(o.delivery_address, c.address) AS address,
                c.postal_code AS postal_code,
-               COALESCE(NULLIF(TRIM(c.phone), ''), NULLIF(TRIM(c.whatsapp_number), '')) AS phone
+               COALESCE(NULLIF(TRIM(c.phone), ''), NULLIF(TRIM(c.whatsapp_number), '')) AS phone,
+               COALESCE(NULLIF(UPPER(TRIM(c.country)), ''), 'PT') AS customer_country
           FROM orders o
           LEFT JOIN customers c ON o.customer_id = c.id
          WHERE o.id = $1`,
@@ -1000,7 +1019,8 @@ class OrderService {
                  c.email AS email,
                  c.address AS address,
                  c.postal_code AS postal_code,
-                 COALESCE(NULLIF(TRIM(c.phone), ''), NULLIF(TRIM(c.whatsapp_number), '')) AS phone
+                 COALESCE(NULLIF(TRIM(c.phone), ''), NULLIF(TRIM(c.whatsapp_number), '')) AS phone,
+                 COALESCE(NULLIF(UPPER(TRIM(c.country)), ''), 'PT') AS customer_country
             FROM orders o
             LEFT JOIN customers c ON o.customer_id = c.id
            WHERE o.id = $1`,

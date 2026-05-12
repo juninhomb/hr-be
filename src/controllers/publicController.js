@@ -132,8 +132,8 @@ class PublicController {
   /** Conferência de cliente + moradas sugeridas (só identificação pelo número no checkout). */
   async customerHints(req, res, next) {
     try {
-      const { whatsapp_number } = req.body || {};
-      const data = await PublicService.getCheckoutHints(whatsapp_number);
+      const { whatsapp_number, default_country: defaultCountry } = req.body || {};
+      const data = await PublicService.getCheckoutHints(whatsapp_number, defaultCountry);
       res.json(data);
     } catch (error) {
       if (error.status) {

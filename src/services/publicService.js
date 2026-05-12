@@ -175,10 +175,14 @@ class PublicService {
 
   /**
    * Checkout: conferência por número (chave interna do cliente) + moradas usadas antes.
-   * POST `{ whatsapp_number }` — dados já associados a esse registo no backoffice.
+   * POST `{ whatsapp_number, default_country? }` — `default_country` ISO2 para parse (defeito PT).
    */
-  async getCheckoutHints(rawWhatsapp) {
-    const wa = canonicalWhatsappNumber(rawWhatsapp);
+  async getCheckoutHints(rawWhatsapp, defaultCountry = 'PT') {
+    const dc = String(defaultCountry || 'PT')
+      .trim()
+      .toUpperCase()
+      .slice(0, 2) || 'PT';
+    const wa = canonicalWhatsappNumber(rawWhatsapp, dc);
     if (!wa) {
       throw publicError(400, 'WhatsApp inválido.');
     }
@@ -387,7 +391,6 @@ class PublicService {
       }
     }
 
-    const cleanWhatsapp = assertValidWhatsappOrThrow(customer.whatsapp_number);
     const customerNotes = sanitizeCustomerNotes(notes);
 
     const isDelivery = Boolean(delivery?.is_delivery);
@@ -397,6 +400,11 @@ class PublicService {
     // Mantemos `address` legado (free-form) — quando não for enviado, montamos
     // um a partir dos campos estruturados para compatibilidade com WhatsApp.
     const country = (customer.country || 'PT').trim().toUpperCase().slice(0, 2);
+    const cleanWhatsapp = assertValidWhatsappOrThrow(
+      customer.whatsapp_number,
+      'WhatsApp inválido',
+      country,
+    );
     let postalCode = (customer.postal_code || '').trim().slice(0, 20) || null;
     if (country === 'ES' && postalCode) {
       const es = postalCode.replace(/\D/g, '').slice(0, 5);
@@ -463,17 +471,13 @@ class PublicService {
           'Não fazemos entrega para este destino ainda. Fala connosco pelo WhatsApp.'
         );
       }
-      // Zonas marcadas como WhatsApp-only não podem ser fechadas no site:
-      // a logística (alfândega, multi-pacotes, taxas variáveis) é tratada
-      // caso a caso pela equipa em conversa direta.
-      if (quote.zone.requires_whatsapp_checkout) {
-        throw publicError(
-          409,
-          `Para entregas em ${quote.zone.label}, o pedido é finalizado pelo WhatsApp. Vamos abrir a conversa para combinarmos tudo.`
-        );
-      }
+      // Zonas UE (`requires_whatsapp_checkout`): regista `shipping_zone_id` mas
+      // `shipping_fee = 0` até a equipa acordar portes no WhatsApp e usar PATCH /shipping-fee no admin.
       shippingFee = quote.fee;
       shippingZone = quote.zone;
+      if (quote.zone.requires_whatsapp_checkout) {
+        shippingFee = 0;
+      }
     }
 
     const client = await db.connect();

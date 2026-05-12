@@ -135,14 +135,18 @@ class CustomerService {
   }
 
   async upsertCustomer(data) {
-    const whatsapp_number = assertValidWhatsappOrThrow(data.whatsapp_number);
+    const country = (cleanOpt(data.country, 2) || 'PT').toUpperCase();
+    const whatsapp_number = assertValidWhatsappOrThrow(
+      data.whatsapp_number,
+      'WhatsApp inválido',
+      country,
+    );
     const full_name = cleanOpt(data.name ?? data.full_name, 255);
     const email = cleanOpt(data.email, 255);
     const address = cleanOpt(data.address, 8000);
     const postal_code = cleanOpt(data.postal_code, 24);
     const city = cleanOpt(data.city, 150);
     const district = cleanOpt(data.district, 120);
-    const country = (cleanOpt(data.country, 2) || 'PT').toUpperCase();
     let phone = cleanOpt(data.phone, 20)?.replace(/\s/g, '') || null;
     if (phone && !/^\+?[0-9]{7,15}$/.test(phone)) {
       const err = new Error('Telefone / contacto auxiliar inválido.');

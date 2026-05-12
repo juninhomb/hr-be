@@ -1,3 +1,9 @@
+const path = require('path')
+const {
+  canonicalWhatsappNumber,
+  nationalNumberDigitsForIntlE164,
+} = require(path.join(__dirname, '..', '..', '..', 'src', 'utils', 'whatsappNormalize'))
+
 describe('Ship2U', () => {
   const LOGIN_URL = 'https://ship2u.pt/en/customer-account/login'
 
@@ -13,13 +19,20 @@ describe('Ship2U', () => {
     phone: '999222000',
   }
 
-  /** Igual ao runner: só dígitos, sem prefixo 351 (repetido). */
+  /**
+   * Ship2U (só Portugal neste fluxo): mesmo critério que `getShip2uRecipientForOrder` +
+   * `ship2uCypressRunner` — dígitos nacionais, nunca com prefixo 351 no valor final.
+   */
   function phoneNationalDigits(raw) {
-    let d = String(raw ?? '').replace(/\D/g, '')
-    while (d.startsWith('351') && d.length > 9) {
-      d = d.slice(3)
+    const d = String(raw ?? '').replace(/\D/g, '')
+    if (!d) return ''
+    const intl = canonicalWhatsappNumber(String(raw ?? ''), 'PT')
+    if (intl && /^[0-9]{10,15}$/.test(intl)) {
+      return nationalNumberDigitsForIntlE164(intl)
     }
-    return d
+    let x = d
+    while (x.startsWith('351') && x.length > 9) x = x.slice(3)
+    return x
   }
 
   /**

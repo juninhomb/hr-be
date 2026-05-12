@@ -1,6 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const {
+  canonicalWhatsappNumber,
+  nationalNumberDigitsForIntlE164,
+} = require('../utils/whatsappNormalize');
 
 const BACKEND_ROOT = path.resolve(__dirname, '..', '..');
 const CY_PROJECT_DIR = path.join(BACKEND_ROOT, 'cy-ship2u');
@@ -51,13 +55,22 @@ function logsDir() {
   return path.join(BACKEND_ROOT, 'logs', 'ship2u-cypress');
 }
 
-/** Telefone só dígitos nacionais PT: remove todos os prefixos 351 consecutivos. */
-function phoneDigitsWithout351(phone) {
-  let d = String(phone ?? '').replace(/\D/g, '');
-  while (d.startsWith('351') && d.length > 9) {
-    d = d.slice(3);
+/**
+ * Telefone para Ship2U (só pedidos PT neste fluxo): dígitos nacionais, sem 351.
+ * Alinhado com `OrderService.getShip2uRecipientForOrder` + fallback legado.
+ */
+function ship2uRecipientPhoneDigitsPt(raw) {
+  const d = String(raw ?? '').replace(/\D/g, '');
+  if (!d) return '';
+  const intl = canonicalWhatsappNumber(String(raw ?? ''), 'PT');
+  if (intl && /^[0-9]{10,15}$/.test(intl)) {
+    return nationalNumberDigitsForIntlE164(intl);
   }
-  return d;
+  let x = d;
+  while (x.startsWith('351') && x.length > 9) {
+    x = x.slice(3);
+  }
+  return x;
 }
 
 /**
@@ -69,7 +82,7 @@ function runAndWait(orderId, recipientPayload) {
   const tmp = path.join('/tmp', `ship2u-recipient-${orderId}-${Date.now()}.json`);
   const payloadForCypress = {
     ...recipientPayload,
-    phone: phoneDigitsWithout351(recipientPayload.phone),
+    phone: ship2uRecipientPhoneDigitsPt(recipientPayload.phone),
   };
   fs.writeFileSync(tmp, JSON.stringify(payloadForCypress), { encoding: 'utf8', mode: 0o600 });
 

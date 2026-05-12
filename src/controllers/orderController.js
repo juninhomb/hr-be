@@ -116,6 +116,8 @@ class OrderController {
               ? 'Comando Cypress/npx não encontrado no servidor.'
               : error.message || 'Ship2U Cypress falhou.',
           logTail: error.logTail || null,
+          logFile: error.logFile || null,
+          logFileRelative: error.logFileRelative || null,
         });
       }
       next(error);

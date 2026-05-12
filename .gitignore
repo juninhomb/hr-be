@@ -20,6 +20,7 @@ test-results/
 !.env.example
 
 # logs
+logs/ship2u-cypress/
 *.log
 npm-debug.log*
 

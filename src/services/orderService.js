@@ -952,6 +952,79 @@ class OrderService {
       client.release();
     }
   }
+
+  /**
+   * Dados do destinatário para automação Ship2U (morada + contactos do cliente).
+   * Usa morada da encomenda quando existe snapshot (`delivery_address`), senão a do cliente.
+   */
+  async getShip2uRecipientForOrder(orderId) {
+    const id = parseInt(orderId, 10);
+    if (!Number.isFinite(id)) throw new Error('ID inválido.');
+
+    const pick = (row) => {
+      const full_name = String(row.full_name || '').trim();
+      const email = String(row.email || '').trim();
+      const address = String(row.address || '').trim();
+      const postal_code = String(row.postal_code || '').trim();
+      const rawPhone = row.phone != null ? String(row.phone).trim() : '';
+      const digits = rawPhone.replace(/\D/g, '');
+      let phone = digits;
+      if (phone && !phone.startsWith('351') && phone.length === 9) {
+        phone = `351${phone}`;
+      }
+      return { full_name, email, address, postal_code, phone };
+    };
+
+    let rows;
+    try {
+      ({ rows } = await db.query(
+        `
+        SELECT COALESCE(o.is_delivery, false) AS is_delivery,
+               c.full_name AS full_name,
+               c.email AS email,
+               COALESCE(o.delivery_address, c.address) AS address,
+               c.postal_code AS postal_code,
+               COALESCE(NULLIF(TRIM(c.phone), ''), NULLIF(TRIM(c.whatsapp_number), '')) AS phone
+          FROM orders o
+          LEFT JOIN customers c ON o.customer_id = c.id
+         WHERE o.id = $1`,
+        [id],
+      ));
+    } catch (err) {
+      const msg = String(err?.message || '');
+      if (err?.code === '42703' && msg.includes('delivery_address')) {
+        ({ rows } = await db.query(
+          `
+          SELECT COALESCE(o.is_delivery, false) AS is_delivery,
+                 c.full_name AS full_name,
+                 c.email AS email,
+                 c.address AS address,
+                 c.postal_code AS postal_code,
+                 COALESCE(NULLIF(TRIM(c.phone), ''), NULLIF(TRIM(c.whatsapp_number), '')) AS phone
+            FROM orders o
+            LEFT JOIN customers c ON o.customer_id = c.id
+           WHERE o.id = $1`,
+          [id],
+        ));
+      } else {
+        throw err;
+      }
+    }
+
+    if (!rows[0]) throw new Error('Pedido não encontrado.');
+    if (!rows[0].is_delivery) {
+      throw new Error('Ship2U só se aplica a pedidos com entrega ao domicílio.');
+    }
+
+    const out = pick(rows[0]);
+    if (!out.full_name) throw new Error('Nome do cliente em falta — actualiza o cliente no backoffice.');
+    if (!out.email) throw new Error('Email do cliente em falta — actualiza o cliente no backoffice.');
+    if (!out.address) throw new Error('Morada de entrega em falta.');
+    if (!out.postal_code) throw new Error('Código postal em falta — actualiza o cliente no backoffice.');
+    if (!out.phone) throw new Error('Telemóvel/WhatsApp em falta — actualiza o cliente no backoffice.');
+
+    return out;
+  }
 }
 
 module.exports = new OrderService();

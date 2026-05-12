@@ -115,6 +115,7 @@ router.post('/:id/cancel', OrderController.cancel);
 router.post('/:id/pickup-ready', OrderController.notifyPickupReady);
 router.post('/:id/pickup-collected', OrderController.markPickupCollected);
 router.post('/:id/mark-expedido', OrderController.markExpedited);
+router.post('/:id/ship2u-cypress', OrderController.runShip2uCypress);
 router.post('/:id/ship', OrderController.ship);
 router.patch('/:id/shipping-fee', OrderController.updateShippingFee);
 router.delete('/:id', OrderController.destroy);

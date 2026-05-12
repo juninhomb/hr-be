@@ -1,4 +1,5 @@
 const OrderService = require('../services/orderService');
+const Ship2uCypressRunner = require('../services/ship2uCypressRunner');
 
 class OrderController {
   async listPending(req, res, next) {
@@ -78,6 +79,44 @@ class OrderController {
     } catch (error) {
       if (error.message?.match(/pedido|entrega|expedido|pago|enviado/i)) {
         return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  /** Arranca automação Cypress Ship2U no servidor (mesmo processo que o backend). */
+  async runShip2uCypress(req, res, next) {
+    try {
+      const disabled = String(process.env.SHIP2U_AUTOMATION || '').trim().toLowerCase();
+      if (disabled === '0' || disabled === 'false' || disabled === 'off') {
+        return res.json({ success: false, skipped: true, reason: 'SHIP2U_AUTOMATION desactivada.' });
+      }
+      const id = parseInt(req.params.id, 10);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+      const recipient = await OrderService.getShip2uRecipientForOrder(id);
+      const result = await Ship2uCypressRunner.runAndWait(id, recipient);
+      res.json({ success: true, ...result });
+    } catch (error) {
+      if (
+        error.message?.match(
+          /pedido|entrega|morada|Morada|email|Email|falta|actualiza|Ship2U|código|Telemóvel|WhatsApp/i,
+        )
+      ) {
+        return res.status(400).json({ error: error.message });
+      }
+      if (
+        typeof error.exitCode === 'number'
+        || error.signal
+        || error.timedOut
+        || error.code === 'ENOENT'
+      ) {
+        return res.status(502).json({
+          error:
+            error.code === 'ENOENT'
+              ? 'Comando Cypress/npx não encontrado no servidor.'
+              : error.message || 'Ship2U Cypress falhou.',
+          logTail: error.logTail || null,
+        });
       }
       next(error);
     }

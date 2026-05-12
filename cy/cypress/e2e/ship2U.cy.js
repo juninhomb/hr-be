@@ -8,7 +8,9 @@ describe('Ship2U', () => {
     cy.clearAllSessionStorage()
   })
 
-  it('login, new shipment: Way2U + pickup sender, country, volumes, weight', () => {
+  it(
+    'login, new shipment: Way2U + sender, volumes, weight, send email + recipient',
+    () => {
     cy.on('uncaught:exception', (err) => {
       // Ship2U minified bundles throw on Cypress focus/input simulation (r.shift is not a function)
       if (err.message.includes('shift is not a function')) return false
@@ -98,6 +100,35 @@ describe('Ship2U', () => {
       cy.get('#modal-remote-xl #weight')
         .clear({ force: true })
         .type('1', { force: true })
+
+      cy.get('#modal-remote-xl input[name="active_email"]').check({ force: true })
+
+      cy.get('#modal-remote-xl input[name="recipient_email"]', { timeout: 10000 })
+        .should('exist')
+        .and('not.be.disabled')
+        .scrollIntoView()
+        .click({ force: true })
+        .clear({ force: true })
+        .type('teste@gmail.com', { force: true })
+
+      cy.get('#modal-remote-xl input[name="recipient_name"]')
+        .clear({ force: true })
+        .type('nome cliente teste', { force: true })
+
+      cy.get('#modal-remote-xl input[name="recipient_address"]')
+        .clear({ force: true })
+        .type('Rua portugal 100, 4 esq', { force: true })
+
+      cy.get('#modal-remote-xl #recipient_zip_code')
+        .clear({ force: true })
+        .type('4430-826', { force: true })
+
+      cy.get('#modal-remote-xl #recipient_phone')
+        .clear({ force: true })
+        .invoke('val', '351999222000')
+        .trigger('input', { force: true })
+        .trigger('change', { force: true })
+        .trigger('blur', { force: true })
     })
   })
 })

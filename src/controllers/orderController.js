@@ -87,22 +87,6 @@ class OrderController {
   /** Arranca automação Cypress Ship2U no servidor (mesmo processo que o backend). */
   async runShip2uCypress(req, res, next) {
     try {
-      const disabled = String(process.env.SHIP2U_AUTOMATION || '').trim().toLowerCase();
-      if (disabled === '0' || disabled === 'false' || disabled === 'off') {
-        return res.json({ success: false, skipped: true, reason: 'SHIP2U_AUTOMATION desactivada.' });
-      }
-
-      const cypressFlag = String(process.env.SHIP2U_CYPRESS_ON_EXPEDITION || '').trim().toLowerCase();
-      const cypressOnExpedition = ['1', 'true', 'on', 'yes'].includes(cypressFlag);
-      if (!cypressOnExpedition) {
-        return res.json({
-          success: false,
-          skipped: true,
-          reason:
-            'Automação Cypress na expedição desactivada. Define SHIP2U_CYPRESS_ON_EXPEDITION=1 no backend para activar.',
-        });
-      }
-
       const id = parseInt(req.params.id, 10);
       if (!id) return res.status(400).json({ error: 'ID inválido' });
       const recipient = await OrderService.getShip2uRecipientForOrder(id);

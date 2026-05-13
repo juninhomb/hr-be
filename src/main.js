@@ -87,12 +87,35 @@ function isTrustedHrstoreHttpsOrigin(origin) {
   }
 }
 
+/**
+ * Em desenvolvimento: browser no site via IP da LAN (ex.: http://192.168.1.224:3002)
+ * faz pedidos CORS ao backend; origens 127/localhost não cobrem esse caso.
+ * Só HTTP, portas usuais do stack local.
+ */
+function isDevelopmentPrivateLanOrigin(origin) {
+  if (process.env.NODE_ENV === 'production') return false;
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== 'http:') return false;
+    const port = u.port || '80';
+    if (!['3000', '3001', '3002', '3005'].includes(port)) return false;
+    const h = u.hostname;
+    if (h === 'localhost' || h === '127.0.0.1') return false;
+    if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    return /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(h);
+  } catch {
+    return false;
+  }
+}
+
 const corsOptions = {
   origin(origin, callback) {
     // Permite ferramentas sem Origin (curl, n8n, health checks)
     if (!origin) return callback(null, true);
     if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
     if (isTrustedHrstoreHttpsOrigin(origin)) return callback(null, true);
+    if (isDevelopmentPrivateLanOrigin(origin)) return callback(null, true);
     // Nunca callback(Error): o cors repassa a next(err) e o errorHandler responde sem
     // Access-Control-Allow-Origin — o browser mostra preflight falhado em vez de "negado" claro.
     if (process.env.NODE_ENV !== 'production') {

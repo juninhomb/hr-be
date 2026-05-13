@@ -70,6 +70,26 @@ function getStripeCheckoutAllowedOrigins() {
 }
 
 /**
+ * Em dev: checkout aberto no browser via IP da rede (ex.: 192.168.x.x:3002).
+ */
+function isDevelopmentPrivateLanOrigin(origin) {
+  if (process.env.NODE_ENV === 'production') return false;
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== 'http:') return false;
+    const port = u.port || '80';
+    if (!['3000', '3001', '3002', '3005'].includes(port)) return false;
+    const h = u.hostname;
+    if (h === 'localhost' || h === '127.0.0.1') return false;
+    if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    return /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(h);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * @param {string} successUrl
  * @param {string} cancelUrl
  */
@@ -105,7 +125,7 @@ function assertStripeCheckoutRedirects(successUrl, cancelUrl) {
     } catch {
       throwConfigError(400, `${name} inválido.`);
     }
-    if (!allowed.includes(origin)) {
+    if (!allowed.includes(origin) && !isDevelopmentPrivateLanOrigin(origin)) {
       throwConfigError(
         400,
         `${name}: origem "${origin}" não autorizada. Origens aceites neste servidor: ${allowed.join(', ')}.`,

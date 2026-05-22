@@ -229,6 +229,8 @@ CREATE TABLE IF NOT EXISTS orders (
   idempotency_key VARCHAR(80),
   pickup_ready_notified_at TIMESTAMPTZ,
   pickup_collected_at TIMESTAMPTZ,
+  parent_order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+  returned_items JSONB,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
   FOREIGN KEY (shipping_zone_id) REFERENCES shipping_zones(id) ON DELETE SET NULL,
@@ -247,6 +249,9 @@ CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_created_at ON orders(created_at);
 CREATE INDEX idx_orders_stripe_link_id ON orders(stripe_link_id);
 CREATE INDEX IF NOT EXISTS idx_orders_payment_method ON orders(payment_method);
+CREATE INDEX IF NOT EXISTS idx_orders_parent_order
+  ON orders (parent_order_id)
+  WHERE parent_order_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_orders_origin ON orders(origin);
 CREATE INDEX IF NOT EXISTS idx_orders_customer_status ON orders(customer_id, status);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_idempotency_key

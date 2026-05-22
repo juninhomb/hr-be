@@ -42,7 +42,7 @@ const REQUIRED = {
     'stripe_link_id', 'customer_notes', 'coupon_code', 'discount_amount',
     'is_delivery', 'shipping_fee', 'shipping_zone_id', 'delivery_address',
     'idempotency_key', 'pickup_ready_notified_at', 'pickup_collected_at',
-    'created_at',
+    'parent_order_id', 'returned_items', 'created_at',
   ],
   order_items: [
     'id', 'order_id', 'variant_id', 'sku', 'quantity', 'unit_price', 'created_at',

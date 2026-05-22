@@ -1,8 +1,11 @@
-const path = require('path')
+// IMPORTANTE: caminho estático — o bundler do Cypress (webpack) não resolve
+// `require(path.join(__dirname, …))` (vira webpackEmptyContext) e falha com
+// "Cannot find module" em runtime. Spec vive em cy-ship2u/cypress/e2e/, o
+// módulo em <repo>/src/utils/, daí três níveis acima.
 const {
   canonicalWhatsappNumber,
   nationalNumberDigitsForIntlE164,
-} = require(path.join(__dirname, '..', '..', '..', 'src', 'utils', 'whatsappNormalize'))
+} = require('../../../src/utils/whatsappNormalize')
 
 describe('Ship2U', () => {
   const LOGIN_URL = 'https://ship2u.pt/en/customer-account/login'

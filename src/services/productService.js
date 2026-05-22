@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { UPLOAD_DIR, toPublicUrl } = require('../config/upload');
 const { resolveVariantColorForWrite } = require('./colorService');
+const ProductImageService = require('./productImageService');
 
 class ProductService {
   async getAllProducts(search = '') {
@@ -381,54 +382,17 @@ class ProductService {
    * Recebe o filename gravado pelo multer (NÃO um caminho completo).
    */
   async setProductImage(productId, filename) {
-    const id = parseInt(productId, 10);
-    if (!Number.isFinite(id)) return null;
-
-    const publicUrl = toPublicUrl(filename);
-
-    // Primeiro descobre se há imagem anterior, para não a deixar órfã.
-    const oldRes = await db.query(
-      `SELECT image_placeholder_url FROM products WHERE id = $1`,
-      [id]
-    );
-    if (!oldRes.rows[0]) return null;
-
-    const oldUrl = oldRes.rows[0].image_placeholder_url;
-
-    const { rows } = await db.query(
-      `UPDATE products
-          SET image_placeholder_url = $1
-        WHERE id = $2
-        RETURNING id, name, image_placeholder_url`,
-      [publicUrl, id]
-    );
-
-    // Só agora apaga a antiga (depois do UPDATE com sucesso).
-    if (oldUrl && oldUrl !== publicUrl) safeDeleteImage(oldUrl);
-
-    return rows[0];
+    return ProductImageService.addProductImages(productId, [filename]);
   }
 
-  /**
-   * Remove a referência da imagem do produto e apaga o ficheiro do disco.
-   */
+  /** @deprecated Preferir DELETE /products/:id/images/:imageId — limpa galeria inteira. */
   async removeProductImage(productId) {
     const id = parseInt(productId, 10);
     if (!Number.isFinite(id)) return null;
-
-    const oldRes = await db.query(
-      `SELECT image_placeholder_url FROM products WHERE id = $1`,
-      [id]
-    );
-    if (!oldRes.rows[0]) return null;
-
-    const oldUrl = oldRes.rows[0].image_placeholder_url;
-    await db.query(
-      `UPDATE products SET image_placeholder_url = NULL WHERE id = $1`,
-      [id]
-    );
-    if (oldUrl) safeDeleteImage(oldUrl);
-    return { id, image_placeholder_url: null };
+    const exists = await db.query(`SELECT id, name FROM products WHERE id = $1`, [id]);
+    if (!exists.rows[0]) return null;
+    await ProductImageService.clearProductImages(id);
+    return { id, image_placeholder_url: null, name: exists.rows[0].name };
   }
 
   // -------------------------------------------------------------
@@ -444,106 +408,28 @@ class ProductService {
    * tipicamente a foto varia por cor (não por tamanho).
    */
   async setVariantImage(variantId, filename, { applyToColor = false } = {}) {
-    const id = parseInt(variantId, 10);
-    if (!Number.isFinite(id)) return null;
-
-    const publicUrl = toPublicUrl(filename);
-
-    const client = await db.connect();
-    try {
-      await client.query('BEGIN');
-
-      // Snapshot anterior (para apagar do disco e descobrir cor/produto)
-      const oldRes = await client.query(
-        `SELECT id, product_id, color, image_url FROM product_variants WHERE id = $1`,
-        [id]
-      );
-      if (!oldRes.rows[0]) {
-        await client.query('ROLLBACK');
-        return null;
-      }
-      const { product_id: productId, color, image_url: oldUrl } = oldRes.rows[0];
-
-      // Lista de URLs antigas a tentar apagar do disco depois do COMMIT.
-      const urlsToDelete = new Set();
-      if (oldUrl && oldUrl !== publicUrl) urlsToDelete.add(oldUrl);
-
-      let affected;
-      if (applyToColor && color) {
-        const propRes = await client.query(
-          `SELECT image_url FROM product_variants
-            WHERE product_id = $1 AND color = $2 AND id <> $3 AND image_url IS NOT NULL`,
-          [productId, color, id]
-        );
-        for (const r of propRes.rows) {
-          if (r.image_url && r.image_url !== publicUrl) urlsToDelete.add(r.image_url);
-        }
-        const upd = await client.query(
-          `UPDATE product_variants
-              SET image_url = $1
-            WHERE product_id = $2 AND color = $3
-            RETURNING id, sku, color, size, image_url`,
-          [publicUrl, productId, color]
-        );
-        affected = upd.rows;
-      } else {
-        const upd = await client.query(
-          `UPDATE product_variants
-              SET image_url = $1
-            WHERE id = $2
-            RETURNING id, sku, color, size, image_url`,
-          [publicUrl, id]
-        );
-        affected = upd.rows;
-      }
-
-      await client.query('COMMIT');
-
-      // Cleanup best-effort fora da transação
-      for (const u of urlsToDelete) safeDeleteImage(u);
-
-      return {
-        updated: affected,
-        applied_to_color: Boolean(applyToColor && color),
-      };
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    const result = await ProductImageService.addVariantImages(variantId, [filename], {
+      applyToColor,
+    });
+    if (!result) return null;
+    const { rows } = await db.query(
+      `SELECT id, sku, color, size, image_url FROM product_variants
+        WHERE id = ANY($1::int[])`,
+      [result.affected_variant_ids],
+    );
+    return {
+      updated: rows,
+      applied_to_color: result.applied_to_color,
+      images: result.images,
+    };
   }
 
-  /**
-   * Remove a imagem de uma variante (volta a herdar do produto-base).
-   * Apaga o ficheiro do disco se não estiver a ser usado por outra variante.
-   */
   async removeVariantImage(variantId) {
     const id = parseInt(variantId, 10);
     if (!Number.isFinite(id)) return null;
-
-    const oldRes = await db.query(
-      `SELECT image_url FROM product_variants WHERE id = $1`,
-      [id]
-    );
-    if (!oldRes.rows[0]) return null;
-
-    const oldUrl = oldRes.rows[0].image_url;
-    await db.query(
-      `UPDATE product_variants SET image_url = NULL WHERE id = $1`,
-      [id]
-    );
-
-    // Só apaga do disco se NENHUMA outra variante ainda apontar ao mesmo URL
-    // (caso tenha sido propagado por cor anteriormente).
-    if (oldUrl) {
-      const stillUsed = await db.query(
-        `SELECT 1 FROM product_variants WHERE image_url = $1 LIMIT 1`,
-        [oldUrl]
-      );
-      if (stillUsed.rowCount === 0) safeDeleteImage(oldUrl);
-    }
-
+    const exists = await db.query(`SELECT id FROM product_variants WHERE id = $1`, [id]);
+    if (!exists.rows[0]) return null;
+    await ProductImageService.clearVariantImages(id);
     return { id, image_url: null };
   }
 

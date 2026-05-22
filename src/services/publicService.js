@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const ProductImageService = require('./productImageService');
 const ShippingService = require('./shippingService');
 const stripeCheckoutService = require('./stripeCheckoutService');
 const { assertValidWhatsappOrThrow, canonicalWhatsappNumber } = require('../utils/whatsappNormalize');
@@ -24,6 +25,21 @@ function isMissingIsActiveColumn(err) {
       err.code === '42703' &&
       /is_active/i.test(String(err.message || '')),
   );
+}
+
+async function safeEnrichProductImages(products) {
+  try {
+    return await ProductImageService.enrichProductsWithImages(products);
+  } catch (err) {
+    if (err && err.code === '42P01') {
+      console.warn(
+        '[PublicService] Tabelas product_images/variant_images em falta — corre '
+        + 'database/migrations/2026-05-22_product_variant_images.sql',
+      );
+      return products;
+    }
+    throw err;
+  }
 }
 
 /**
@@ -108,7 +124,7 @@ class PublicService {
 
     try {
       const rows = await exec(true);
-      return groupProductRows(rows);
+      return safeEnrichProductImages(groupProductRows(rows));
     } catch (err) {
       if (!isMissingIsActiveColumn(err)) throw err;
       console.warn(
@@ -116,7 +132,7 @@ class PublicService {
         + 'database/migrations/2026-05-01_variant_is_active.sql. A usar listagem legada.',
       );
       const rows = await exec(false);
-      return groupProductRows(rows);
+      return safeEnrichProductImages(groupProductRows(rows));
     }
   }
 
@@ -168,7 +184,8 @@ class PublicService {
     }
 
     const grouped = groupProductRows(rows);
-    const p = grouped[0];
+    const enriched = await safeEnrichProductImages(grouped);
+    const p = enriched[0];
     if (!p || !p.variants?.length) return null;
     return p;
   }

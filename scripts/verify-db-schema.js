@@ -20,6 +20,8 @@ const REQUIRED = {
     'id', 'product_id', 'sku', 'color', 'size', 'stock_quantity', 'is_active',
     'image_url', 'color_id', 'created_at',
   ],
+  product_images: ['id', 'product_id', 'url', 'sort_order', 'created_at'],
+  variant_images: ['id', 'variant_id', 'url', 'sort_order', 'created_at'],
   customers: [
     'id', 'full_name', 'whatsapp_number', 'email', 'address',
     'postal_code', 'city', 'district', 'country', 'phone',

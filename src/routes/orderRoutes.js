@@ -68,22 +68,36 @@ router.post('/colors', ColorController.create);
 router.put('/colors/:id', ColorController.update);
 router.delete('/colors/:id', ColorController.destroy);
 
-// Upload / remover imagem do produto-base (fallback partilhado)
-// (multipart/form-data, field "image")
+// Galeria de imagens do produto-base (múltiplas)
+router.get('/products/:productId/images', ProductController.listProductImages);
+router.post(
+  '/products/:productId/images',
+  upload.array('images', 12),
+  ProductController.uploadProductImages,
+);
+router.delete('/products/:productId/images/:imageId', ProductController.deleteProductImage);
+
+// Compat: um ficheiro no campo "image" (acrescenta à galeria)
 router.post(
   '/products/:productId/image',
   upload.single('image'),
-  ProductController.uploadImage
+  ProductController.uploadImage,
 );
 router.delete('/products/:productId/image', ProductController.removeImage);
 
-// Upload / remover imagem específica de uma variante
-// Body opcional: applyToColor=true → propaga para todas as variantes da
-// mesma cor.
+// Galeria de imagens da variante
+router.get('/variants/:variantId/images', ProductController.listVariantImages);
+router.post(
+  '/variants/:variantId/images',
+  upload.array('images', 12),
+  ProductController.uploadVariantImages,
+);
+router.delete('/variants/:variantId/images/:imageId', ProductController.deleteVariantImage);
+
 router.post(
   '/variants/:variantId/image',
   upload.single('image'),
-  ProductController.uploadVariantImage
+  ProductController.uploadVariantImage,
 );
 router.delete('/variants/:variantId/image', ProductController.removeVariantImage);
 

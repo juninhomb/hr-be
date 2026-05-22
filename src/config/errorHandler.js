@@ -5,7 +5,7 @@ module.exports = (err, req, res, next) => {
   if (err && err.name === 'MulterError') {
     const map = {
       LIMIT_FILE_SIZE: 'Imagem demasiado grande (máx. 5 MB).',
-      LIMIT_UNEXPECTED_FILE: 'Campo de upload inesperado (esperado "image").',
+      LIMIT_UNEXPECTED_FILE: 'Campo de upload inesperado (esperado "image" ou "images").',
     };
     return res.status(400).json({
       error: map[err.code] || `Erro no upload: ${err.code}`,

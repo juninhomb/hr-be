@@ -1,4 +1,5 @@
 const ProductService = require('../services/productService');
+const ProductImageService = require('../services/productImageService');
 
 class ProductController {
   async list(req, res, next) {
@@ -200,6 +201,87 @@ class ProductController {
       if (!Number.isFinite(variantId)) return res.status(400).json({ error: 'variantId inválido' });
       const result = await ProductService.removeVariantImage(variantId);
       if (!result) return res.status(404).json({ error: 'Variante não encontrada' });
+      res.json(result);
+    } catch (error) { next(error); }
+  }
+
+  // Galeria — múltiplas imagens
+  async listProductImages(req, res, next) {
+    try {
+      const productId = parseInt(req.params.productId, 10);
+      if (!Number.isFinite(productId)) return res.status(400).json({ error: 'productId inválido' });
+      const images = await ProductImageService.listProductImages(productId);
+      res.json(images);
+    } catch (error) { next(error); }
+  }
+
+  async uploadProductImages(req, res, next) {
+    try {
+      const files = req.files?.length ? req.files : req.file ? [req.file] : [];
+      if (!files.length) {
+        return res.status(400).json({ error: 'Envia pelo menos um ficheiro no campo "images".' });
+      }
+      const productId = parseInt(req.params.productId, 10);
+      if (!Number.isFinite(productId)) return res.status(400).json({ error: 'productId inválido' });
+      const result = await ProductImageService.addProductImages(
+        productId,
+        files.map((f) => f.filename),
+      );
+      if (!result) return res.status(404).json({ error: 'Produto não encontrado' });
+      res.json(result);
+    } catch (error) {
+      if (error.statusCode === 400) return res.status(400).json({ error: error.message });
+      next(error);
+    }
+  }
+
+  async deleteProductImage(req, res, next) {
+    try {
+      const imageId = parseInt(req.params.imageId, 10);
+      if (!Number.isFinite(imageId)) return res.status(400).json({ error: 'imageId inválido' });
+      const result = await ProductImageService.removeProductImage(imageId);
+      if (!result) return res.status(404).json({ error: 'Imagem não encontrada' });
+      res.json(result);
+    } catch (error) { next(error); }
+  }
+
+  async listVariantImages(req, res, next) {
+    try {
+      const variantId = parseInt(req.params.variantId, 10);
+      if (!Number.isFinite(variantId)) return res.status(400).json({ error: 'variantId inválido' });
+      const images = await ProductImageService.listVariantImages(variantId);
+      res.json(images);
+    } catch (error) { next(error); }
+  }
+
+  async uploadVariantImages(req, res, next) {
+    try {
+      const files = req.files?.length ? req.files : req.file ? [req.file] : [];
+      if (!files.length) {
+        return res.status(400).json({ error: 'Envia pelo menos um ficheiro no campo "images".' });
+      }
+      const variantId = parseInt(req.params.variantId, 10);
+      if (!Number.isFinite(variantId)) return res.status(400).json({ error: 'variantId inválido' });
+      const applyToColor = String(req.body?.applyToColor ?? '').toLowerCase() === 'true';
+      const result = await ProductImageService.addVariantImages(
+        variantId,
+        files.map((f) => f.filename),
+        { applyToColor },
+      );
+      if (!result) return res.status(404).json({ error: 'Variante não encontrada' });
+      res.json(result);
+    } catch (error) {
+      if (error.statusCode === 400) return res.status(400).json({ error: error.message });
+      next(error);
+    }
+  }
+
+  async deleteVariantImage(req, res, next) {
+    try {
+      const imageId = parseInt(req.params.imageId, 10);
+      if (!Number.isFinite(imageId)) return res.status(400).json({ error: 'imageId inválido' });
+      const result = await ProductImageService.removeVariantImage(imageId);
+      if (!result) return res.status(404).json({ error: 'Imagem não encontrada' });
       res.json(result);
     } catch (error) { next(error); }
   }

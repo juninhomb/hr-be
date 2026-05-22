@@ -697,8 +697,8 @@ class OrderService {
   }
 
   // -------------------------------------------------------------
-  // Expedição: impressão / recibo — pago + entrega → expedido
-  // Idempotente se já estiver em expedido.
+  // Expedição: impressão / recibo — qualquer pedido pago → expedido
+  // (entrega ao domicílio ou levantamento em loja). Idempotente se já expedido.
   // -------------------------------------------------------------
   async markAsExpedited(orderId) {
     const id = parseInt(orderId, 10);
@@ -709,7 +709,6 @@ class OrderService {
       UPDATE orders
          SET status = 'expedido'
        WHERE id = $1
-         AND COALESCE(is_delivery, false) = true
          AND status = 'pago'
        RETURNING id`,
       [id],
@@ -720,13 +719,10 @@ class OrderService {
     }
 
     const { rows: cur } = await db.query(
-      `SELECT id, status, COALESCE(is_delivery, false) AS is_delivery FROM orders WHERE id = $1`,
+      `SELECT id, status FROM orders WHERE id = $1`,
       [id],
     );
     if (!cur[0]) throw new Error('Pedido não encontrado.');
-    if (!cur[0].is_delivery) {
-      throw new Error('Só pedidos com entrega ao domicílio podem ser marcados como expedidos.');
-    }
     if (String(cur[0].status) === 'expedido') {
       return { success: true, orderId: id, status: 'expedido', already: true };
     }

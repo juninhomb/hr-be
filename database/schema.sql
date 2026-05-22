@@ -88,6 +88,31 @@ CREATE INDEX idx_product_variants_color_size ON product_variants(color, size);
 CREATE INDEX IF NOT EXISTS idx_product_variants_color_id ON product_variants (color_id);
 
 -- =====================================================
+-- 4b. GALERIAS DE IMAGENS (produto + variante)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS product_images (
+  id          SERIAL PRIMARY KEY,
+  product_id  INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  url         VARCHAR(500) NOT NULL,
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_images_product
+  ON product_images (product_id, sort_order, id);
+
+CREATE TABLE IF NOT EXISTS variant_images (
+  id          SERIAL PRIMARY KEY,
+  variant_id  INTEGER NOT NULL REFERENCES product_variants(id) ON DELETE CASCADE,
+  url         VARCHAR(500) NOT NULL,
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_variant_images_variant
+  ON variant_images (variant_id, sort_order, id);
+
+-- =====================================================
 -- 5. CUSTOMERS
 -- =====================================================
 CREATE TABLE IF NOT EXISTS customers (

@@ -94,13 +94,9 @@ class OrderController {
       const result = await Ship2uCypressRunner.runAndWait(id, recipient);
       res.json({ success: true, ...result });
     } catch (error) {
-      if (
-        error.message?.match(
-          /pedido|entrega|morada|Morada|email|Email|falta|actualiza|Ship2U|código|Telemóvel|WhatsApp/i,
-        )
-      ) {
-        return res.status(400).json({ error: error.message });
-      }
+      // 1) Falhas técnicas do Cypress (exit code, sinal, timeout, npx em falta).
+      //    Avaliar PRIMEIRO — a mensagem «Cypress terminou com código X» contém
+      //    "código" e batia falsamente na regex de validação abaixo.
       if (
         typeof error.exitCode === 'number'
         || error.signal
@@ -116,6 +112,14 @@ class OrderController {
           logFile: error.logFile || null,
           logFileRelative: error.logFileRelative || null,
         });
+      }
+      // 2) Erros de validação vindos do OrderService (morada, telemóvel, etc.).
+      if (
+        error.message?.match(
+          /pedido|entrega|morada|Morada|email|Email|falta|actualiza|Ship2U|Telemóvel|WhatsApp|postal/i,
+        )
+      ) {
+        return res.status(400).json({ error: error.message });
       }
       next(error);
     }

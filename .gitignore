@@ -5,6 +5,7 @@ cy/node_modules/
 cy/cypress/fixtures/
 cy/cypress/fixtures/login.json
 
+cy-ship2u/cypress/screenshots/
 cy-ship2u/node_modules/
 cy-ship2u/cypress/fixtures/login.json
 

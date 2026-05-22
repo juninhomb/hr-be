@@ -1,4 +1,5 @@
 const OrderService = require('../services/orderService');
+const ExchangeService = require('../services/exchangeService');
 const Ship2uCypressRunner = require('../services/ship2uCypressRunner');
 
 class OrderController {
@@ -194,6 +195,31 @@ class OrderController {
       }
       next(error);
     }
+  }
+
+  async createTroca(req, res, next) {
+    try {
+      const adminUser = req.user?.username || 'admin';
+      const result = await ExchangeService.createExchange({
+        ...req.body,
+        admin_user: adminUser,
+      });
+      res.status(201).json(result);
+    } catch (error) {
+      if (error.message?.match(/stock|SKU|Quantidade|Indica|Pedido|reembolso|original|troca|inválid/i)) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
+  async getTrocaReturnedSummary(req, res, next) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+      const data = await ExchangeService.getReturnedSummary(id);
+      res.json(data);
+    } catch (error) { next(error); }
   }
 
   async couponQuote(req, res, next) {

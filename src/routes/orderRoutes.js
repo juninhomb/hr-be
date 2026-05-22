@@ -37,6 +37,10 @@ router.post('/mail/test', MailController.test);
 router.post('/coupon-quote', OrderController.couponQuote);
 router.post('/create', OrderController.create);
 
+// Trocas (TROCA): novo pedido (origin='troca') ligado ao original.
+router.post('/troca', OrderController.createTroca);
+router.get('/troca/:id/returned-summary', OrderController.getTrocaReturnedSummary);
+
 // Inventário (Produtos)
 router.get('/products', ProductController.list);
 router.get('/products/base', ProductController.listBase);

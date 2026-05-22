@@ -28,9 +28,13 @@ function defaultShippingFeeEur() {
 
 /** Lista pedidos com JOIN a clientes (morada combinada migrações antigas ↔ snapshot em `orders`). */
 async function queryOrdersJoinedCustomer(whereSql, params = []) {
+  const trocasCount = `
+    (SELECT COUNT(*)::int FROM orders ot
+       WHERE ot.parent_order_id = o.id AND ot.status <> 'cancelado') AS trocas_count`;
   const head = `
       SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
              o.is_delivery, o.shipping_fee, o.customer_notes, o.pickup_ready_notified_at, o.pickup_collected_at,
+             o.parent_order_id, ${trocasCount},
              c.full_name, c.whatsapp_number, c.email,
   `;
   const tail = `
@@ -40,6 +44,13 @@ async function queryOrdersJoinedCustomer(whereSql, params = []) {
   const headNoCustomerNotes = `
       SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
              o.is_delivery, o.shipping_fee, NULL::text AS customer_notes, o.pickup_ready_notified_at, o.pickup_collected_at,
+             o.parent_order_id, ${trocasCount},
+             c.full_name, c.whatsapp_number, c.email,
+  `;
+  const headNoTroca = `
+      SELECT o.id, o.customer_id, o.total_amount, o.status, o.origin, o.payment_method, o.created_at,
+             o.is_delivery, o.shipping_fee, o.customer_notes, o.pickup_ready_notified_at, o.pickup_collected_at,
+             NULL::int AS parent_order_id, 0 AS trocas_count,
              c.full_name, c.whatsapp_number, c.email,
   `;
   try {
@@ -50,6 +61,26 @@ async function queryOrdersJoinedCustomer(whereSql, params = []) {
     return rows;
   } catch (err) {
     const msg = String(err?.message || '');
+    // Fallback: migração 2026-05-22_orders_troca.sql ainda não aplicada
+    if (err?.code === '42703' && msg.includes('parent_order_id')) {
+      try {
+        const { rows } = await db.query(
+          `${headNoTroca} COALESCE(o.delivery_address, c.address) AS address ${tail}`,
+          params,
+        );
+        return rows;
+      } catch (errInner) {
+        const m2 = String(errInner?.message || '');
+        if (errInner?.code === '42703' && m2.includes('delivery_address')) {
+          const { rows } = await db.query(
+            `${headNoTroca} c.address AS address ${tail}`,
+            params,
+          );
+          return rows;
+        }
+        throw errInner;
+      }
+    }
     if (err?.code === '42703' && msg.includes('customer_notes')) {
       try {
         const { rows } = await db.query(

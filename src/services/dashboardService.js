@@ -24,7 +24,7 @@ class DashboardService {
         ) AS revenue_current_month,
         ((date_trunc('month', CURRENT_DATE)::date)::text) AS stats_month_anchor,
         (SELECT COUNT(*)::int FROM product_variants
-          WHERE stock_quantity BETWEEN 1 AND 5) AS low_stock_count,
+          WHERE stock_quantity BETWEEN 1 AND 2) AS low_stock_count,
         (SELECT COUNT(*)::int FROM product_variants WHERE stock_quantity = 0) AS out_of_stock_count,
         (SELECT COUNT(*)::int FROM customers) AS total_customers,
         (SELECT COUNT(*)::int FROM orders WHERE status = 'aguardando_pagamento') AS pending_count,
@@ -93,12 +93,12 @@ class DashboardService {
       ORDER BY revenue DESC
     `;
 
-    // Stock crítico (esgotado + baixo 1–5, alinhado ao filtro do inventário) — top 8
+    // Stock crítico (esgotado + baixo 1–2, alinhado ao filtro do inventário) — top 8
     const lowStock = `
       SELECT v.sku, v.color, v.size, v.stock_quantity, p.name
       FROM product_variants v
       LEFT JOIN products p ON p.id = v.product_id
-      WHERE v.stock_quantity <= 5
+      WHERE v.stock_quantity <= 2
       ORDER BY v.stock_quantity ASC, p.name ASC
       LIMIT 8
     `;

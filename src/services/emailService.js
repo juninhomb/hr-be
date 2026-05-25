@@ -4,6 +4,7 @@ const db = require('../config/db');
 const orderPaymentConfirmed = require('../templates/email/orderPaymentConfirmed');
 const orderPickupReady = require('../templates/email/orderPickupReady');
 const orderShipped = require('../templates/email/orderShipped');
+const orderPendingAdminAlert = require('../templates/email/orderPendingAdminAlert');
 
 /** Token OAuth para SMTP Gmail / Google Workspace — cache em memória (processo). */
 let cachedAccess = { token: null, expiryMs: 0 };
@@ -412,6 +413,101 @@ function scheduleNotifyOrderShipped(orderId) {
   });
 }
 
+/**
+ * Destinatário das notificações internas (equipa). Default:
+ * `atendimento@hrstorept.com`. Override por env `ADMIN_NOTIFICATION_EMAIL`.
+ */
+function adminNotificationRecipient() {
+  return (
+    process.env.ADMIN_NOTIFICATION_EMAIL?.trim()
+    || 'atendimento@hrstorept.com'
+  );
+}
+
+/**
+ * Avisa a equipa quando o site cria um pedido com pagamento manual
+ * (MB Way / transferência) — não chama o cliente, só a caixa interna.
+ */
+async function notifyAdminOrderAwaitingPaymentById(orderId) {
+  if (!mailSendingEnabled() || !isMailConfigured()) {
+    return { sent: false, reason: mailSendingEnabled() ? 'not_configured' : 'disabled' };
+  }
+
+  try {
+    const data = await fetchOrderForPaymentEmail(orderId);
+    if (!data) return { sent: false, reason: 'order_not_found' };
+    // O cliente pode não ter email — esse aviso é para a equipa, não para o cliente.
+    const orderInfo = data._skipReason === 'no_customer_email'
+      ? {
+        orderId: data.id || orderId,
+        full_name: data.full_name,
+        email: null,
+        total_amount: data.total_amount,
+        shipping_fee: data.shipping_fee,
+        is_delivery: data.is_delivery,
+        payment_method: data.payment_method,
+        items: data.items,
+      }
+      : data;
+
+    // Vai buscar o whatsapp do cliente (não está em fetchOrderForPaymentEmail).
+    let whatsapp = null;
+    try {
+      const { rows } = await db.query(
+        `SELECT c.whatsapp_number
+           FROM orders o
+           LEFT JOIN customers c ON c.id = o.customer_id
+          WHERE o.id = $1
+          LIMIT 1`,
+        [orderId],
+      );
+      whatsapp = rows[0]?.whatsapp_number || null;
+    } catch { /* opcional, segue sem WhatsApp */ }
+
+    const { subject, text, html } = orderPendingAdminAlert.build({
+      orderId: orderInfo.orderId,
+      customerName: orderInfo.full_name,
+      customerEmail: orderInfo.email,
+      customerWhatsapp: whatsapp,
+      totalAmount: orderInfo.total_amount,
+      shippingFee: orderInfo.shipping_fee,
+      isDelivery: orderInfo.is_delivery,
+      paymentMethod: orderInfo.payment_method,
+      items: orderInfo.items,
+    });
+
+    const to = adminNotificationRecipient();
+    await sendMail({ to, subject, text, html });
+    console.log('[email] admin_awaiting_payment enviado', { orderId, to });
+    return { sent: true, orderId };
+  } catch (err) {
+    console.error('[email] admin_awaiting_payment falhou', orderId, err?.message || err);
+    throw err;
+  }
+}
+
+function scheduleNotifyAdminOrderAwaitingPayment(orderId) {
+  const id = parseInt(orderId, 10);
+  if (!Number.isFinite(id)) return;
+  if (!mailSendingEnabled()) {
+    console.warn('[email] admin_awaiting_payment: agendamento IGNORADO — MAIL_SENDING_ENABLED desligado', { orderId: id });
+    return;
+  }
+  if (!isMailConfigured()) {
+    console.warn(
+      '[email] admin_awaiting_payment: agendamento IGNORADO — e-mail não configurado',
+      { orderId: id, missing: missingMailEnvKeys() },
+    );
+    return;
+  }
+
+  setImmediate(() => {
+    notifyAdminOrderAwaitingPaymentById(id).catch((err) => {
+      console.error('[email] admin_awaiting_payment (assíncrono) falhou', id, err?.message || err);
+    });
+  });
+}
+
 async function sendTestMail(toRaw) {
   const to =
     String(toRaw || process.env.MAIL_TEST_TO || '')
@@ -438,7 +534,9 @@ module.exports = {
   notifyOrderPaymentConfirmedById,
   notifyOrderPickupReadyById,
   notifyOrderShippedById,
+  notifyAdminOrderAwaitingPaymentById,
   scheduleNotifyOrderPaymentConfirmed,
   scheduleNotifyOrderShipped,
+  scheduleNotifyAdminOrderAwaitingPayment,
   sendTestMail,
 };

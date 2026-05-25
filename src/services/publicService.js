@@ -2,6 +2,7 @@ const db = require('../config/db');
 const ProductImageService = require('./productImageService');
 const ShippingService = require('./shippingService');
 const stripeCheckoutService = require('./stripeCheckoutService');
+const emailService = require('./emailService');
 const { assertValidWhatsappOrThrow, canonicalWhatsappNumber } = require('../utils/whatsappNormalize');
 const { upsertCustomerAddress } = require('./customerAddressService');
 const { resolveCoupon } = require('../utils/discountCoupons');
@@ -704,6 +705,19 @@ class PublicService {
           })]
         );
       } catch (e) { /* noop */ }
+
+      // Aviso à equipa: pagamento manual (MB Way / transferência) — pedido
+      // fica em `aguardando_pagamento` e exige monitorização manual.
+      // Excluímos Stripe porque esse fluxo confirma sozinho pelo webhook e
+      // já envia email ao cliente.
+      const pmNorm = String(customer.payment_method || '').trim().toLowerCase();
+      if (pmNorm !== 'stripe') {
+        try {
+          emailService.scheduleNotifyAdminOrderAwaitingPayment(orderId);
+        } catch (e) {
+          console.warn('[publicService] notify admin awaiting payment falhou (não-fatal):', e?.message || e);
+        }
+      }
 
       return {
         success: true,

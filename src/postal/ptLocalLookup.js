@@ -51,8 +51,7 @@ function ensureLoaded() {
     warnedMissing = true;
     // eslint-disable-next-line no-console
     console.warn(
-      '[pt-local] Sem `data/pt-postal-lookup.json`. Corre `npm run build:postal-data` no backend (ver README). '
-      + 'Enquanto isso pode usar GEOAPI_PT_API_KEY como opcional.'
+      '[pt-local] Sem `data/pt-postal-lookup.json`. Corre `npm run build:postal-data` no backend (ver .env.example).'
     );
   }
 }

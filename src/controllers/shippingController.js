@@ -77,10 +77,8 @@ class ShippingController {
   /**
    * GET /api/public/postal-code/:cp
    *
-   * Detalhes de CP em Portugal prioritariamente através de
-   * `data/pt-postal-lookup.json` (gerado pelo script npm run build:postal-data
-   * a partir dos dados abertos Central de Dados). Opcional GeoAPI apenas com
-   * GEOAPI_PT_API_KEY quando o índice local falta neste servidor.
+   * Detalhes de CP em Portugal via `data/pt-postal-lookup.json`
+   * (`npm run build:postal-data` — Central de Dados, sem API externa).
    */
   async lookupCp(req, res, next) {
     try {

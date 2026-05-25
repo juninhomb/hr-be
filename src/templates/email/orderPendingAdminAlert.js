@@ -124,23 +124,45 @@ function build({
         Novo pedido com pagamento <strong>${escapeHtml(paymentLabel(paymentMethod))}</strong>. Monitorizar entrada e confirmar no admin.
       </p>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;font-size:13px;">
-        <div><div style="color:#777;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">Cliente</div><div style="font-weight:600;">${escapeHtml(customerName || '—')}</div></div>
-        ${customerWhatsapp ? `<div><div style="color:#777;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">WhatsApp</div><div style="font-family:ui-monospace,monospace;">${escapeHtml(customerWhatsapp)}</div></div>` : ''}
-        ${customerEmail ? `<div style="grid-column:1/-1;"><div style="color:#777;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">Email</div><div>${escapeHtml(customerEmail)}</div></div>` : ''}
-      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:16px 0;font-size:13px;border-collapse:collapse;">
+        <tr>
+          <td style="padding:4px 8px 4px 0;vertical-align:top;width:50%;">
+            <div style="color:#777;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">Cliente</div>
+            <div style="font-weight:600;margin-top:2px;">${escapeHtml(customerName || '—')}</div>
+          </td>
+          ${customerWhatsapp ? `
+          <td style="padding:4px 0 4px 8px;vertical-align:top;width:50%;">
+            <div style="color:#777;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">WhatsApp</div>
+            <div style="font-family:ui-monospace,monospace;margin-top:2px;">${escapeHtml(customerWhatsapp)}</div>
+          </td>` : '<td style="width:50%;"></td>'}
+        </tr>
+        ${customerEmail ? `
+        <tr>
+          <td colspan="2" style="padding:8px 0 0;">
+            <div style="color:#777;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;">Email</div>
+            <div style="margin-top:2px;">${escapeHtml(customerEmail)}</div>
+          </td>
+        </tr>` : ''}
+      </table>
 
-      <div style="margin:16px 0;padding:12px;border:1px solid #eee;border-radius:12px;background:#FBF8F4;">
-        <div style="display:flex;justify-content:space-between;font-size:13px;">
-          <span>Entrega ao domicílio</span>
-          <strong>${isDelivery ? 'Sim' : 'Não (levantamento)'}</strong>
-        </div>
-        ${ship > 0 ? `<div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px;"><span>Portes</span><strong>${escapeHtml(fmtMoney(ship))}</strong></div>` : ''}
-        <div style="display:flex;justify-content:space-between;font-size:15px;margin-top:8px;border-top:1px dashed #ccc;padding-top:8px;">
-          <span><strong>Total a cobrar</strong></span>
-          <strong style="font-family:ui-monospace,monospace;">${escapeHtml(fmtMoney(totalAmount))}</strong>
-        </div>
-      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:16px 0;border:1px solid #eee;border-radius:12px;background:#FBF8F4;border-collapse:separate;">
+        <tr>
+          <td style="padding:10px 12px 4px;font-size:13px;color:#222;">Entrega ao domicílio</td>
+          <td style="padding:10px 12px 4px;font-size:13px;text-align:right;"><strong>${isDelivery ? 'Sim' : 'Não (levantamento)'}</strong></td>
+        </tr>
+        ${ship > 0 ? `
+        <tr>
+          <td style="padding:4px 12px;font-size:13px;color:#222;">Portes</td>
+          <td style="padding:4px 12px;font-size:13px;text-align:right;font-family:ui-monospace,monospace;"><strong>${escapeHtml(fmtMoney(ship))}</strong></td>
+        </tr>` : ''}
+        <tr>
+          <td colspan="2" style="padding:8px 12px 0;"><div style="border-top:1px dashed #ccc;"></div></td>
+        </tr>
+        <tr>
+          <td style="padding:6px 12px 12px;font-size:15px;color:#111;"><strong>Total a cobrar</strong></td>
+          <td style="padding:6px 12px 12px;font-size:15px;text-align:right;font-family:ui-monospace,monospace;"><strong>${escapeHtml(fmtMoney(totalAmount))}</strong></td>
+        </tr>
+      </table>
 
       <table style="width:100%;border-collapse:collapse;margin-top:8px;">
         <thead>

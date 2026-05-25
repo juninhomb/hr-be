@@ -68,7 +68,10 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
   fileFilter(_req, file, cb) {
     if (!ALLOWED_MIME.has(file.mimetype)) {
-      return cb(new Error(`Tipo de ficheiro não suportado: ${file.mimetype}`));
+      const err = new Error(`Tipo de ficheiro não suportado: ${file.mimetype}. Aceites: JPG, PNG, WebP, AVIF, GIF.`);
+      err.statusCode = 400;
+      err.code = 'UNSUPPORTED_MIME';
+      return cb(err);
     }
     cb(null, true);
   },
@@ -80,7 +83,10 @@ const uploadGallery = multer({
   limits: { fileSize: 5 * 1024 * 1024, files: 12 },
   fileFilter(_req, file, cb) {
     if (!ALLOWED_MIME.has(file.mimetype)) {
-      return cb(new Error(`Tipo de ficheiro não suportado: ${file.mimetype}`));
+      const err = new Error(`Tipo de ficheiro não suportado: ${file.mimetype}. Aceites: JPG, PNG, WebP, AVIF, GIF.`);
+      err.statusCode = 400;
+      err.code = 'UNSUPPORTED_MIME';
+      return cb(err);
     }
     cb(null, true);
   },

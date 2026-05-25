@@ -104,34 +104,54 @@ async function addProductImages(productId, filenames) {
   const files = (filenames || []).filter(Boolean);
   if (!files.length) return null;
 
+  // Pré-validação (rápida, fora da transação)
   const exists = await db.query(`SELECT id FROM products WHERE id = $1`, [id]);
-  if (!exists.rows[0]) return null;
-
-  const { rows: countRows } = await db.query(
-    `SELECT COUNT(*)::int AS n FROM product_images WHERE product_id = $1`,
-    [id],
-  );
-  let sort = countRows[0]?.n || 0;
-  if (sort + files.length > MAX_IMAGES_PER_ENTITY) {
-    const err = new Error(`Máximo de ${MAX_IMAGES_PER_ENTITY} imagens por produto.`);
-    err.statusCode = 400;
-    throw err;
+  if (!exists.rows[0]) {
+    // Produto não existe → ficheiros multer já em disco viram lixo. Limpa.
+    files.forEach((f) => safeDeleteFile(toPublicUrl(f)));
+    return null;
   }
 
-  const inserted = [];
-  for (const filename of files) {
-    const url = toPublicUrl(filename);
-    const { rows } = await db.query(
-      `INSERT INTO product_images (product_id, url, sort_order)
-       VALUES ($1, $2, $3)
-       RETURNING id, product_id, url, sort_order, created_at`,
-      [id, url, sort++],
+  const client = await db.connect();
+  try {
+    await client.query('BEGIN');
+
+    const { rows: countRows } = await client.query(
+      `SELECT COUNT(*)::int AS n FROM product_images WHERE product_id = $1`,
+      [id],
     );
-    inserted.push(rows[0]);
-  }
+    let sort = countRows[0]?.n || 0;
+    if (sort + files.length > MAX_IMAGES_PER_ENTITY) {
+      const err = new Error(`Máximo de ${MAX_IMAGES_PER_ENTITY} imagens por produto.`);
+      err.statusCode = 400;
+      throw err;
+    }
 
-  const primary = await syncProductPrimary(id);
-  return { product_id: id, images: inserted, image_placeholder_url: primary };
+    const inserted = [];
+    for (const filename of files) {
+      const url = toPublicUrl(filename);
+      const { rows } = await client.query(
+        `INSERT INTO product_images (product_id, url, sort_order)
+         VALUES ($1, $2, $3)
+         RETURNING id, product_id, url, sort_order, created_at`,
+        [id, url, sort++],
+      );
+      inserted.push(rows[0]);
+    }
+
+    await client.query('COMMIT');
+
+    // syncProductPrimary fora da transação — só lê + UPDATE com snapshot já consistente.
+    const primary = await syncProductPrimary(id);
+    return { product_id: id, images: inserted, image_placeholder_url: primary };
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    // Limpa ficheiros que o multer deixou em disco — DB não os reconhece após ROLLBACK.
+    files.forEach((f) => safeDeleteFile(toPublicUrl(f)));
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 async function addVariantImages(variantId, filenames, { applyToColor = false } = {}) {
@@ -150,6 +170,8 @@ async function addVariantImages(variantId, filenames, { applyToColor = false } =
     );
     if (!vRes.rows[0]) {
       await client.query('ROLLBACK');
+      // Variante não existe → ficheiros do multer são lixo. Limpa.
+      files.forEach((f) => safeDeleteFile(toPublicUrl(f)));
       return null;
     }
     const { product_id: productId, color } = vRes.rows[0];
@@ -205,7 +227,9 @@ async function addVariantImages(variantId, filenames, { applyToColor = false } =
       affected_variant_ids: targetVariantIds,
     };
   } catch (e) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
+    // Limpa ficheiros que o multer deixou em disco — DB não os reconhece após ROLLBACK.
+    files.forEach((f) => safeDeleteFile(toPublicUrl(f)));
     throw e;
   } finally {
     client.release();

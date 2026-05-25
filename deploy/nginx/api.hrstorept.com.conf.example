@@ -1,0 +1,48 @@
+# Exemplo — API HR Store (produção)
+# Copiar para: /etc/nginx/sites-available/api.hrstorept.com
+# ln -s ... sites-enabled/  →  nginx -t  →  systemctl reload nginx
+#
+# Ajusta ssl_certificate* se usares Certbot noutro path.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name api.hrstorept.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name api.hrstorept.com;
+
+    # --- Upload galeria (12 imagens × 5 MB) — OBRIGATÓRIO para inventário admin ---
+    include /etc/nginx/snippets/hrstore-upload-limits.conf;
+
+    # SSL (exemplo — substitui pelos paths reais do certbot)
+    ssl_certificate     /etc/letsencrypt/live/api.hrstorept.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.hrstorept.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Ficheiros estáticos de upload servidos pelo Node (/uploads)
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

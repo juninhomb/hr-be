@@ -1,5 +1,6 @@
 const ProductService = require('../services/productService');
 const ProductImageService = require('../services/productImageService');
+const { collectGalleryFiles } = require('../config/upload');
 
 class ProductController {
   async list(req, res, next) {
@@ -212,14 +213,23 @@ class ProductController {
       if (!Number.isFinite(productId)) return res.status(400).json({ error: 'productId inválido' });
       const images = await ProductImageService.listProductImages(productId);
       res.json(images);
-    } catch (error) { next(error); }
+    } catch (error) {
+      if (error.code === '42P01') {
+        return res.status(503).json({
+          error: 'Tabela product_images em falta. Aplica a migração 2026-05-22_product_variant_images.sql.',
+        });
+      }
+      next(error);
+    }
   }
 
   async uploadProductImages(req, res, next) {
     try {
-      const files = req.files?.length ? req.files : req.file ? [req.file] : [];
+      const files = collectGalleryFiles(req);
       if (!files.length) {
-        return res.status(400).json({ error: 'Envia pelo menos um ficheiro no campo "images".' });
+        return res.status(400).json({
+          error: 'Nenhum ficheiro recebido. Usa o campo "images" (vários) ou "image" (um).',
+        });
       }
       const productId = parseInt(req.params.productId, 10);
       if (!Number.isFinite(productId)) return res.status(400).json({ error: 'productId inválido' });
@@ -230,6 +240,11 @@ class ProductController {
       if (!result) return res.status(404).json({ error: 'Produto não encontrado' });
       res.json(result);
     } catch (error) {
+      if (error.code === '42P01') {
+        return res.status(503).json({
+          error: 'Tabela product_images em falta na base de dados. Aplica a migração 2026-05-22_product_variant_images.sql.',
+        });
+      }
       if (error.statusCode === 400) return res.status(400).json({ error: error.message });
       next(error);
     }
@@ -251,14 +266,23 @@ class ProductController {
       if (!Number.isFinite(variantId)) return res.status(400).json({ error: 'variantId inválido' });
       const images = await ProductImageService.listVariantImages(variantId);
       res.json(images);
-    } catch (error) { next(error); }
+    } catch (error) {
+      if (error.code === '42P01') {
+        return res.status(503).json({
+          error: 'Tabela variant_images em falta. Aplica a migração 2026-05-22_product_variant_images.sql.',
+        });
+      }
+      next(error);
+    }
   }
 
   async uploadVariantImages(req, res, next) {
     try {
-      const files = req.files?.length ? req.files : req.file ? [req.file] : [];
+      const files = collectGalleryFiles(req);
       if (!files.length) {
-        return res.status(400).json({ error: 'Envia pelo menos um ficheiro no campo "images".' });
+        return res.status(400).json({
+          error: 'Nenhum ficheiro recebido. Usa o campo "images" (vários) ou "image" (um).',
+        });
       }
       const variantId = parseInt(req.params.variantId, 10);
       if (!Number.isFinite(variantId)) return res.status(400).json({ error: 'variantId inválido' });
@@ -271,6 +295,11 @@ class ProductController {
       if (!result) return res.status(404).json({ error: 'Variante não encontrada' });
       res.json(result);
     } catch (error) {
+      if (error.code === '42P01') {
+        return res.status(503).json({
+          error: 'Tabela variant_images em falta na base de dados. Aplica a migração 2026-05-22_product_variant_images.sql.',
+        });
+      }
       if (error.statusCode === 400) return res.status(400).json({ error: error.message });
       next(error);
     }

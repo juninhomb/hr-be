@@ -14,7 +14,7 @@ const DiscountCouponController = require('../controllers/discountCouponControlle
 const ColorController = require('../controllers/colorController');
 
 const authMiddleware = require('../config/authMiddleware');
-const { upload } = require('../config/upload');
+const { upload, uploadGallery } = require('../config/upload');
 const { loginLimiter } = require('../config/publicRateLimit');
 
 // --- ROTAS PÚBLICAS ---
@@ -76,7 +76,7 @@ router.delete('/colors/:id', ColorController.destroy);
 router.get('/products/:productId/images', ProductController.listProductImages);
 router.post(
   '/products/:productId/images',
-  upload.array('images', 12),
+  uploadGallery,
   ProductController.uploadProductImages,
 );
 router.delete('/products/:productId/images/:imageId', ProductController.deleteProductImage);
@@ -93,7 +93,7 @@ router.delete('/products/:productId/image', ProductController.removeImage);
 router.get('/variants/:variantId/images', ProductController.listVariantImages);
 router.post(
   '/variants/:variantId/images',
-  upload.array('images', 12),
+  uploadGallery,
   ProductController.uploadVariantImages,
 );
 router.delete('/variants/:variantId/images/:imageId', ProductController.deleteVariantImage);

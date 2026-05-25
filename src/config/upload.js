@@ -57,7 +57,8 @@ const storage = multer.diskStorage({
       req.params.productId ||
       'x';
     const ext = (path.extname(file.originalname) || '.jpg').toLowerCase();
-    const stamp = Date.now();
+    // Sufixo aleatório evita sobrescrever ficheiros no mesmo ms (upload múltiplo).
+    const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     cb(null, `${kind}-${id}-${stamp}${ext}`);
   },
 });
@@ -73,8 +74,39 @@ const upload = multer({
   },
 });
 
+/** Galeria produto/variante: aceita `images` (vários) ou `image` (um). */
+const uploadGallery = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 12 },
+  fileFilter(_req, file, cb) {
+    if (!ALLOWED_MIME.has(file.mimetype)) {
+      return cb(new Error(`Tipo de ficheiro não suportado: ${file.mimetype}`));
+    }
+    cb(null, true);
+  },
+}).fields([
+  { name: 'images', maxCount: 12 },
+  { name: 'image', maxCount: 12 },
+]);
+
+function collectGalleryFiles(req) {
+  const out = [];
+  if (req.files && typeof req.files === 'object' && !Array.isArray(req.files)) {
+    for (const key of ['images', 'image']) {
+      const chunk = req.files[key];
+      if (Array.isArray(chunk)) out.push(...chunk);
+    }
+  } else if (Array.isArray(req.files)) {
+    out.push(...req.files);
+  }
+  if (req.file) out.push(req.file);
+  return out;
+}
+
 module.exports = {
   upload,
+  uploadGallery,
+  collectGalleryFiles,
   // Mantido para compat — `productService` ainda importa `UPLOAD_DIR`
   // como sinónimo de "pasta dos produtos".
   UPLOAD_DIR: PRODUCTS_DIR,

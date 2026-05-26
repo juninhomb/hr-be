@@ -706,17 +706,14 @@ class PublicService {
         );
       } catch (e) { /* noop */ }
 
-      // Aviso à equipa: pagamento manual (MB Way / transferência) — pedido
-      // fica em `aguardando_pagamento` e exige monitorização manual.
-      // Excluímos Stripe porque esse fluxo confirma sozinho pelo webhook e
-      // já envia email ao cliente.
-      const pmNorm = String(customer.payment_method || '').trim().toLowerCase();
-      if (pmNorm !== 'stripe') {
-        try {
-          emailService.scheduleNotifyAdminOrderAwaitingPayment(orderId);
-        } catch (e) {
-          console.warn('[publicService] notify admin awaiting payment falhou (não-fatal):', e?.message || e);
-        }
+      // Aviso à equipa: TODOS os pedidos criados pelo site (independentemente
+      // do método de pagamento). Para Stripe, o pedido ainda fica em
+      // `aguardando_pagamento` neste momento — o webhook confirma a seguir.
+      // O email serve para a equipa saber que há novo pedido a acompanhar.
+      try {
+        emailService.scheduleNotifyAdminOrderAwaitingPayment(orderId);
+      } catch (e) {
+        console.warn('[publicService] notify admin order created falhou (não-fatal):', e?.message || e);
       }
 
       return {

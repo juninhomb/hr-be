@@ -65,14 +65,20 @@ function build({
   paymentMethod,
   items,
 }) {
-  const subject = `[HR Store] Pedido #${orderId} — aguardando pagamento (${paymentLabel(paymentMethod)})`;
+  const pmNorm = String(paymentMethod || '').trim().toLowerCase();
+  const isStripe = pmNorm === 'stripe';
+  const subject = `[HR Store] Novo pedido #${orderId} no site (${paymentLabel(paymentMethod)})`;
 
   const ship = Number(shippingFee) || 0;
   const itemsList = Array.isArray(items) ? items : [];
 
+  const nextStepLine = isStripe
+    ? 'Próximo passo: o Stripe confirma o pagamento por webhook. Se não chegar confirmação automática em poucos minutos, valida manualmente no admin.'
+    : 'Próximo passo: monitorizar entrada do MB Way ou extracto bancário; quando entrar, confirmar pagamento no admin.';
+
   // ---------- TEXT ----------
   const textLines = [
-    `Novo pedido no site aguarda confirmação de pagamento.`,
+    `Novo pedido criado no site.`,
     ``,
     `Pedido: #${orderId}`,
     `Cliente: ${customerName || '—'}`,
@@ -91,7 +97,7 @@ function build({
       return `  ${it.quantity}× ${it.product_name || it.sku || '—'}${caption ? ` (${caption})` : ''} · ${it.sku || ''} · ${sub}`;
     }),
     ``,
-    `Próximo passo: monitorizar entrada do MB Way ou extracto bancário; quando entrar, confirmar pagamento no admin.`,
+    nextStepLine,
   ].filter(Boolean);
 
   const text = textLines.join('\n') + '\n';
@@ -118,10 +124,13 @@ function build({
 <html lang="pt-PT">
   <body style="margin:0;padding:24px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#111;background:#FBF8F4;">
     <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #eee;border-radius:16px;padding:24px;">
-      <p style="margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#B5562C;">Aguardando pagamento</p>
-      <h1 style="margin:0 0 12px;font-size:22px;line-height:1.2;">Pedido #${escapeHtml(orderId)} — site</h1>
+      <p style="margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#B5562C;">Novo pedido no site</p>
+      <h1 style="margin:0 0 12px;font-size:22px;line-height:1.2;">Pedido #${escapeHtml(orderId)}</h1>
       <p style="margin:0 0 16px;color:#444;font-size:14px;line-height:1.5;">
-        Novo pedido com pagamento <strong>${escapeHtml(paymentLabel(paymentMethod))}</strong>. Monitorizar entrada e confirmar no admin.
+        Pagamento <strong>${escapeHtml(paymentLabel(paymentMethod))}</strong>.
+        ${isStripe
+          ? 'Stripe confirma por webhook — verifica no admin se não chegar a confirmação automática.'
+          : 'Monitorizar entrada do MB Way ou extracto bancário e confirmar no admin.'}
       </p>
 
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;margin:16px 0;font-size:13px;border-collapse:collapse;">
@@ -175,7 +184,9 @@ function build({
       </table>
 
       <p style="margin:20px 0 0;font-size:12px;color:#666;line-height:1.5;">
-        Quando o pagamento entrar, confirma no admin (<em>Vendas → Pedidos Pendentes → Confirmar Pagamento</em>) — o cliente recebe automaticamente o email de confirmação.
+        ${isStripe
+          ? 'Pagamento Stripe: o webhook actualiza o pedido para «pago» automaticamente. Se não receberes confirmação em poucos minutos, valida em <em>Vendas → Pedidos Pendentes</em>.'
+          : 'Quando o pagamento entrar, confirma no admin (<em>Vendas → Pedidos Pendentes → Confirmar Pagamento</em>) — o cliente recebe automaticamente o email de confirmação.'}
       </p>
     </div>
   </body>

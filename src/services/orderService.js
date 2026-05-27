@@ -821,9 +821,12 @@ class OrderService {
         await client.query('ROLLBACK');
         throw new Error('Este pedido tem entrega ao domicílio — não se aplica levantamento na loja.');
       }
-      if (row.status !== 'pago') {
+      if (row.status !== 'expedido') {
         await client.query('ROLLBACK');
-        throw new Error('Este pedido ainda não está como pago. Confirma o pagamento antes de libertar para levantamento.');
+        if (row.status === 'pago') {
+          throw new Error('Este pedido ainda não foi expedido. Marca como «Expedido» (separa os artigos / imprime recibo) antes de libertar para levantamento.');
+        }
+        throw new Error('Este pedido não está em estado «Expedido» — não é possível libertar para levantamento.');
       }
       if (row.pickup_ready_notified_at != null) {
         await client.query('ROLLBACK');
@@ -892,12 +895,15 @@ class OrderService {
         await client.query('ROLLBACK');
         throw new Error('Este pedido tem envio ao domicílio — usa o fluxo de envio/embalagem.');
       }
-      if (row.status !== 'pago') {
+      if (row.status !== 'expedido') {
         await client.query('ROLLBACK');
         if (row.status === 'entregue') {
           throw new Error('Este pedido já está marcado como concluído (levantado / entregue).');
         }
-        throw new Error('Só é possível confirmar levantamento quando o pedido está pago.');
+        if (row.status === 'pago') {
+          throw new Error('Marca primeiro como «Expedido» (separa os artigos) antes de confirmar levantamento.');
+        }
+        throw new Error('Só é possível confirmar levantamento quando o pedido está «Expedido».');
       }
 
       const { rows: out } = await client.query(

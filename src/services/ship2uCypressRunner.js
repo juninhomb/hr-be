@@ -8,8 +8,15 @@ const {
 
 const BACKEND_ROOT = path.resolve(__dirname, '..', '..');
 const CY_PROJECT_DIR = path.join(BACKEND_ROOT, 'cy-ship2u');
-/** Relativo à raiz do projecto Cypress (`cy-ship2u`). */
-const SHIP2U_CYPRESS_SPEC = 'cypress/e2e/ship2u.cy.js';
+/**
+ * Specs disponíveis (relativos à raiz do projecto Cypress `cy-ship2u`).
+ * `default`     → fluxo Ship2U normal (com recolha agendada).
+ * `sem_retirada` → fluxo sem recolha (cliente leva à transportadora).
+ */
+const SHIP2U_SPECS = {
+  default: 'cypress/e2e/ship2u.cy.js',
+  sem_retirada: 'cypress/e2e/ship2uSemRetirada.cy.js',
+};
 
 const MAX_LOG_CAPTURE = 512 * 1024;
 const DEFAULT_TIMEOUT_MS = 600000;
@@ -78,7 +85,9 @@ function ship2uRecipientPhoneDigitsPt(raw) {
  * Grava stdout+stderr num `.log` consultável no servidor (SSH).
  * @returns {Promise<{ exitCode: number, logFile: string, logFileRelative: string, logTail: string }>}
  */
-function runAndWait(orderId, recipientPayload) {
+function runAndWait(orderId, recipientPayload, opts = {}) {
+  const variant = opts.variant === 'sem_retirada' ? 'sem_retirada' : 'default';
+  const specPath = SHIP2U_SPECS[variant];
   const tmp = path.join('/tmp', `ship2u-recipient-${orderId}-${Date.now()}.json`);
   const payloadForCypress = {
     ...recipientPayload,
@@ -88,14 +97,15 @@ function runAndWait(orderId, recipientPayload) {
 
   const dir = logsDir();
   fs.mkdirSync(dir, { recursive: true });
-  const logPath = path.join(dir, `order-${orderId}-${Date.now()}.log`);
+  const logSuffix = variant === 'default' ? '' : `-${variant}`;
+  const logPath = path.join(dir, `order-${orderId}${logSuffix}-${Date.now()}.log`);
   const logStream = fs.createWriteStream(logPath, { flags: 'w', mode: 0o600 });
 
   const args = [
     'cypress',
     'run',
     '--spec',
-    SHIP2U_CYPRESS_SPEC,
+    specPath,
     '--env',
     `RECIPIENT_FILE=${tmp}`,
   ];
@@ -106,7 +116,7 @@ function runAndWait(orderId, recipientPayload) {
     ? Math.min(Math.max(parsedTimeout, 30000), 1800000)
     : DEFAULT_TIMEOUT_MS;
 
-  const header = `[ship2u-cypress] orderId=${orderId} started=${new Date().toISOString()}\nrecipient_file=${tmp}\nlog_file=${logPath}\n---\n`;
+  const header = `[ship2u-cypress] orderId=${orderId} variant=${variant} spec=${specPath} started=${new Date().toISOString()}\nrecipient_file=${tmp}\nlog_file=${logPath}\n---\n`;
   logStream.write(header);
 
   return new Promise((resolve, reject) => {
@@ -223,4 +233,4 @@ function runAndWait(orderId, recipientPayload) {
   });
 }
 
-module.exports = { runAndWait, BACKEND_ROOT, CY_PROJECT_DIR };
+module.exports = { runAndWait, BACKEND_ROOT, CY_PROJECT_DIR, SHIP2U_SPECS };

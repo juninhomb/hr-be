@@ -90,9 +90,13 @@ class OrderController {
     try {
       const id = parseInt(req.params.id, 10);
       if (!id) return res.status(400).json({ error: 'ID inválido' });
+      // `variant`: 'default' (com recolha) | 'sem_retirada'. Aceita via body
+      // ou query string; default 'default' para compat retroactiva.
+      const rawVariant = String(req.body?.variant ?? req.query?.variant ?? '').trim().toLowerCase();
+      const variant = rawVariant === 'sem_retirada' ? 'sem_retirada' : 'default';
       const recipient = await OrderService.getShip2uRecipientForOrder(id);
-      const result = await Ship2uCypressRunner.runAndWait(id, recipient);
-      res.json({ success: true, ...result });
+      const result = await Ship2uCypressRunner.runAndWait(id, recipient, { variant });
+      res.json({ success: true, variant, ...result });
     } catch (error) {
       // 1) Falhas técnicas do Cypress (exit code, sinal, timeout, npx em falta).
       //    Avaliar PRIMEIRO — a mensagem «Cypress terminou com código X» contém

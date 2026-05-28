@@ -1,6 +1,7 @@
 const OrderService = require('../services/orderService');
 const ExchangeService = require('../services/exchangeService');
 const Ship2uCypressRunner = require('../services/ship2uCypressRunner');
+const { generateReceiptPdf } = require('../services/receiptPdfService');
 
 class OrderController {
   async listPending(req, res, next) {

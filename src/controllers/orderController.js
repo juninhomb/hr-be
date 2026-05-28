@@ -28,6 +28,42 @@ class OrderController {
     } catch (error) { next(error); }
   }
 
+  async receiptPdf(req, res, next) {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (!id) return res.status(400).json({ error: 'ID inválido' });
+
+      const order = await OrderService.getOrderById(id);
+      if (!order) return res.status(404).json({ error: 'Pedido não encontrado' });
+
+      const paperMmRaw = req.query?.paper;
+      const contentMmRaw = req.query?.content;
+      const paperMm = Number(String(paperMmRaw ?? '').trim());
+      const contentMm = Number(String(contentMmRaw ?? '').trim());
+
+      const pdfBuffer = await generateReceiptPdf(order, {
+        ...(Number.isFinite(paperMm) && paperMm > 0 ? { paperMm } : {}),
+        ...(Number.isFinite(contentMm) && contentMm > 0 ? { contentMm } : {}),
+      });
+
+      const safeOrigin = String(order.origin || 'pedido')
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-');
+      const filename = `${safeOrigin}-${id}.pdf`;
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Length', String(pdfBuffer.length));
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      return res.end(pdfBuffer);
+    } catch (error) {
+      if (error?.message?.match(/font|PDF|pedido/i)) {
+        return res.status(400).json({ error: error.message });
+      }
+      next(error);
+    }
+  }
+
   async confirm(req, res, next) {
     try {
       const { orderId, items, shipping_fee } = req.body;

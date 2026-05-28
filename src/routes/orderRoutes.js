@@ -128,6 +128,7 @@ router.delete('/customers/:whatsapp', CustomerController.destroy);
 // Detalhe / cancelamento de pedidos por ID — declarados POR ÚLTIMO
 // para não capturar /products, /customers, /pending, etc.
 router.post('/:id/stripe-checkout-session', OrderController.createPdvStripeCheckoutSession);
+router.get('/:id/receipt.pdf', OrderController.receiptPdf);
 router.get('/:id', OrderController.show);
 router.post('/:id/cancel', OrderController.cancel);
 router.post('/:id/pickup-ready', OrderController.notifyPickupReady);

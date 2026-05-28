@@ -148,13 +148,18 @@ function buildBlocks(order) {
  * @returns {Promise<Buffer>}
  */
 function generateReceiptPdf(order, opts = {}) {
-  const paperMm = Number(opts.paperMm) > 0 ? Number(opts.paperMm) : 80;
-  const contentMm = Number(opts.contentMm) > 0 ? Number(opts.contentMm) : Math.max(40, paperMm - 8);
-  const pageWidth = paperMm * PT_PER_MM;
-  const marginX = (paperMm - contentMm) * PT_PER_MM / 2;
+  const paperMm = Number(opts.paperMm) > 0 ? Number(opts.paperMm) : 58;
+  const contentMm = Number(opts.contentMm) > 0
+    ? Number(opts.contentMm)
+    : Math.max(40, paperMm - 10);
+  // A página PDF usa a largura ÚTIL (content), não o rolo físico inteiro —
+  // evita o diálogo de impressão forçar 80×297 mm quando o conteúdo é mais estreito.
+  const pageWidthMm = Math.min(contentMm, paperMm);
+  const pageWidth = pageWidthMm * PT_PER_MM;
+  const marginX = 3;
   const contentWidth = pageWidth - marginX * 2;
-  const topPad = 6;
-  const bottomPad = 10; // pequena folga antes do corte
+  const topPad = 4;
+  const bottomPad = 6;
 
   const blocks = buildBlocks(order);
 

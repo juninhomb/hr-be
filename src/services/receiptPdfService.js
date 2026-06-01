@@ -67,9 +67,27 @@ function buildBlocks(order) {
   const row = (left, right, opts = {}) => blocks.push({ kind: 'row', left: String(left ?? ''), right: String(right ?? ''), font: 'Courier', size: 8, gap: 1.5, ...opts });
   const rule = () => blocks.push({ kind: 'rule', gap: 3 });
   const space = (h) => blocks.push({ kind: 'space', h });
+  // Badge tipo "etiqueta": rectângulo preto centrado com texto branco em destaque.
+  const badge = (text, opts = {}) => blocks.push({
+    kind: 'badge',
+    text: String(text ?? '').toUpperCase(),
+    font: 'Courier-Bold',
+    size: 11,
+    padX: 6,
+    padY: 4,
+    gap: 3,
+    ...opts,
+  });
 
   // Cabeçalho
   txt(isTroca ? 'RECIBO DE TROCA' : 'EXPEDIÇÃO', { font: 'Courier-Bold', size: 11, align: 'center', gap: 2 });
+
+  // Tipo de entrega — só recibos normais (troca não tem expedição).
+  // Black bg + white text para destacar imediatamente para a equipa.
+  if (!isTroca) {
+    badge(delivery ? 'CTT — ENVIO AO DOMICÍLIO' : 'RECOLHA NA LOJA');
+  }
+
   txt(isTroca ? `Troca #${order.id}` : `Pedido #${order.id}`, { font: 'Courier-Bold', size: 9, align: 'center', gap: 1 });
   if (isTroca && order.parent_order_id != null) {
     txt(`do pedido #${order.parent_order_id}`, { align: 'center', size: 7.5 });
@@ -182,6 +200,13 @@ function generateReceiptPdf(order, opts = {}) {
       total += Math.max(hLeft, hRight) + (b.gap || 0);
       continue;
     }
+    if (b.kind === 'badge') {
+      measureDoc.font(b.font).fontSize(b.size);
+      const innerW = contentWidth - b.padX * 2;
+      const hText = measureDoc.heightOfString(b.text, { width: innerW, align: 'center' });
+      total += hText + b.padY * 2 + (b.gap || 0);
+      continue;
+    }
   }
   measureDoc.end();
   const pageHeight = Math.ceil(total + bottomPad);
@@ -231,6 +256,24 @@ function generateReceiptPdf(order, opts = {}) {
       doc.text(b.left, marginX, y, { width: leftW, align: 'left' });
       doc.text(b.right, marginX + contentWidth - rightW, y, { width: rightW, align: 'right' });
       y += h + (b.gap || 0);
+      continue;
+    }
+    if (b.kind === 'badge') {
+      doc.font(b.font).fontSize(b.size);
+      const innerW = contentWidth - b.padX * 2;
+      const hText = doc.heightOfString(b.text, { width: innerW, align: 'center' });
+      const boxH = hText + b.padY * 2;
+      // Rectângulo preto cheio em toda a largura útil.
+      doc.save()
+        .rect(marginX, y, contentWidth, boxH)
+        .fill('#000')
+        .restore();
+      // Texto branco centrado em cima.
+      doc.fillColor('#fff')
+        .text(b.text, marginX + b.padX, y + b.padY, { width: innerW, align: 'center' });
+      // Reset cor para não contaminar blocos seguintes.
+      doc.fillColor('#000');
+      y += boxH + (b.gap || 0);
       continue;
     }
   }

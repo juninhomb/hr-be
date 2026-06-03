@@ -63,8 +63,31 @@ function buildBlocks(order) {
   const itemsTotal = items.reduce((a, it) => a + Number(it.unit_price || 0) * Number(it.quantity || 0), 0);
   const returnedTotal = returned.reduce((a, r) => a + Number(r.unit_price || 0) * Number(r.quantity || 0), 0);
 
-  const txt = (text, opts = {}) => blocks.push({ kind: 'text', text: String(text ?? ''), font: 'Courier', size: 8, align: 'left', gap: 1.5, ...opts });
-  const row = (left, right, opts = {}) => blocks.push({ kind: 'row', left: String(left ?? ''), right: String(right ?? ''), font: 'Courier', size: 8, gap: 1.5, ...opts });
+  // Courier regular rasteriza muito claro em térmicas (modo "Print as image").
+  // Corpo todo em negrito + tamanhos ligeiramente maiores = contraste legível.
+  const FONT_BODY = 'Courier-Bold';
+  const SIZE_BODY = 9;
+  const SIZE_META = 8.5;
+  const SIZE_SMALL = 8;
+
+  const txt = (text, opts = {}) => blocks.push({
+    kind: 'text',
+    text: String(text ?? ''),
+    font: FONT_BODY,
+    size: SIZE_BODY,
+    align: 'left',
+    gap: 1.5,
+    ...opts,
+  });
+  const row = (left, right, opts = {}) => blocks.push({
+    kind: 'row',
+    left: String(left ?? ''),
+    right: String(right ?? ''),
+    font: FONT_BODY,
+    size: SIZE_BODY,
+    gap: 1.5,
+    ...opts,
+  });
   const rule = () => blocks.push({ kind: 'rule', gap: 3 });
   const space = (h) => blocks.push({ kind: 'space', h });
   // Badge tipo "etiqueta": rectângulo preto centrado com texto branco em destaque.
@@ -88,73 +111,73 @@ function buildBlocks(order) {
     badge(delivery ? 'CTT — ENVIO AO DOMICÍLIO' : 'RECOLHA NA LOJA');
   }
 
-  txt(isTroca ? `Troca #${order.id}` : `Pedido #${order.id}`, { font: 'Courier-Bold', size: 9, align: 'center', gap: 1 });
+  txt(isTroca ? `Troca #${order.id}` : `Pedido #${order.id}`, { size: 10, align: 'center', gap: 1 });
   if (isTroca && order.parent_order_id != null) {
-    txt(`do pedido #${order.parent_order_id}`, { align: 'center', size: 7.5 });
+    txt(`do pedido #${order.parent_order_id}`, { align: 'center', size: SIZE_META });
   }
-  txt(fmtPtDate(order.created_at), { align: 'center', size: 7.5 });
-  txt(`${String(order.origin || '—').toUpperCase()} · ${paymentLabel(order.payment_method)}`, { align: 'center', size: 7.5 });
-  txt(`Estado: ${String(order.status || '').replace('_', ' ')}`, { align: 'center', size: 7.5 });
+  txt(fmtPtDate(order.created_at), { align: 'center', size: SIZE_META });
+  txt(`${String(order.origin || '—').toUpperCase()} · ${paymentLabel(order.payment_method)}`, { align: 'center', size: SIZE_META });
+  txt(`Estado: ${String(order.status || '').replace('_', ' ')}`, { align: 'center', size: SIZE_META });
 
   rule();
 
   // Cliente
-  txt('CLIENTE', { font: 'Courier-Bold', size: 7.5 });
+  txt('CLIENTE', { size: SIZE_META });
   txt(order.full_name || '—');
-  if (order.whatsapp_number) txt(order.whatsapp_number, { size: 7.5 });
-  if (order.email) txt(order.email, { size: 7.5 });
+  if (order.whatsapp_number) txt(order.whatsapp_number, { size: SIZE_META });
+  if (order.email) txt(order.email, { size: SIZE_META });
 
   // Envio (só fora de troca)
   if (!isTroca) {
     rule();
-    txt('ENVIO', { font: 'Courier-Bold', size: 7.5 });
+    txt('ENVIO', { size: SIZE_META });
     txt(order.address?.trim() || '— sem morada —');
     if (order.customer_notes?.trim()) {
-      txt('Notas', { font: 'Courier-Bold', size: 7 });
-      txt(order.customer_notes.trim(), { size: 7.5 });
+      txt('Notas', { size: SIZE_META });
+      txt(order.customer_notes.trim(), { size: SIZE_META });
     }
   }
 
   // Devolvidos (troca)
   if (isTroca && returned.length) {
     rule();
-    txt('DEVOLVIDOS', { font: 'Courier-Bold', size: 7.5 });
+    txt('DEVOLVIDOS', { size: SIZE_META });
     for (const r of returned) {
-      row(`${r.quantity}x ${r.sku}`, `- ${fmtMoney(Number(r.unit_price || 0) * Number(r.quantity || 0))}`, { size: 7.5 });
+      row(`${r.quantity}x ${r.sku}`, `- ${fmtMoney(Number(r.unit_price || 0) * Number(r.quantity || 0))}`, { size: SIZE_META });
     }
-    row('Subtotal devolvido', `- ${fmtMoney(returnedTotal)}`, { size: 7.5 });
+    row('Subtotal devolvido', `- ${fmtMoney(returnedTotal)}`, { size: SIZE_META });
   }
 
   rule();
 
   // Artigos
-  txt(isTroca ? 'NOVOS ARTIGOS' : 'ARTIGOS', { font: 'Courier-Bold', size: 7.5 });
+  txt(isTroca ? 'NOVOS ARTIGOS' : 'ARTIGOS', { size: SIZE_META });
   for (const it of items) {
-    txt(`${it.quantity}x ${it.product_name || it.sku || '—'}`, { font: 'Courier-Bold', size: 8, gap: 0.5 });
+    txt(`${it.quantity}x ${it.product_name || it.sku || '—'}`, { size: SIZE_BODY, gap: 0.5 });
     const caption = [it.color, it.size].filter(Boolean).join(' · ') || '—';
-    row(`${caption}  ${it.sku || ''}`, fmtMoney(Number(it.unit_price || 0) * Number(it.quantity || 0)), { size: 7 });
+    row(`${caption}  ${it.sku || ''}`, fmtMoney(Number(it.unit_price || 0) * Number(it.quantity || 0)), { size: SIZE_META });
   }
 
   rule();
 
   // Totais
   if (isTroca) {
-    row('Subtotal novos', fmtMoney(itemsTotal), { size: 8 });
-    row('Devolvido', `- ${fmtMoney(returnedTotal)}`, { size: 8 });
-    row('DIFERENÇA', fmtMoney(order.total_amount), { font: 'Courier-Bold', size: 10 });
+    row('Subtotal novos', fmtMoney(itemsTotal));
+    row('Devolvido', `- ${fmtMoney(returnedTotal)}`);
+    row('DIFERENÇA', fmtMoney(order.total_amount), { size: 11 });
   } else {
-    row('Subtotal', fmtMoney(itemsTotal), { size: 8 });
+    row('Subtotal', fmtMoney(itemsTotal));
     if (Number(order.discount_amount || 0) > 0.004) {
-      row(`Desc.${order.coupon_code ? ` (${order.coupon_code})` : ''}`, `- ${fmtMoney(order.discount_amount)}`, { size: 8 });
+      row(`Desc.${order.coupon_code ? ` (${order.coupon_code})` : ''}`, `- ${fmtMoney(order.discount_amount)}`);
     }
-    if (ship > 0.004) row('Portes', fmtMoney(ship), { size: 8 });
-    row('TOTAL', fmtMoney(order.total_amount), { font: 'Courier-Bold', size: 10 });
+    if (ship > 0.004) row('Portes', fmtMoney(ship));
+    row('TOTAL', fmtMoney(order.total_amount), { size: 11 });
   }
 
   rule();
   txt(
     isTroca ? 'Recibo de troca — controlo interno.' : 'Controlo interno — após embalar, marcar «Enviar via CTT».',
-    { align: 'center', size: 6.5, gap: 0 },
+    { align: 'center', size: SIZE_SMALL, gap: 0 },
   );
 
   return blocks;
@@ -239,8 +262,8 @@ function generateReceiptPdf(order, opts = {}) {
     if (b.kind === 'space') { y += b.h; continue; }
     if (b.kind === 'rule') {
       doc.save()
-        .lineWidth(0.5)
-        .dash(2, { space: 1.5 })
+        .lineWidth(1)
+        .dash(2, { space: 1 })
         .moveTo(marginX, y)
         .lineTo(marginX + contentWidth, y)
         .stroke('#000')

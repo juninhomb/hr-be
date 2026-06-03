@@ -38,12 +38,15 @@ class OrderController {
 
       const paperMmRaw = req.query?.paper;
       const contentMmRaw = req.query?.content;
+      const pageHeightMmRaw = req.query?.pageh;
       const paperMm = Number(String(paperMmRaw ?? '').trim());
       const contentMm = Number(String(contentMmRaw ?? '').trim());
+      const pageHeightMm = Number(String(pageHeightMmRaw ?? '').trim());
 
       const pdfBuffer = await generateReceiptPdf(order, {
         ...(Number.isFinite(paperMm) && paperMm > 0 ? { paperMm } : {}),
         ...(Number.isFinite(contentMm) && contentMm > 0 ? { contentMm } : {}),
+        ...(Number.isFinite(pageHeightMm) && pageHeightMm > 0 ? { pageHeightMm } : {}),
       });
 
       const safeOrigin = String(order.origin || 'pedido')

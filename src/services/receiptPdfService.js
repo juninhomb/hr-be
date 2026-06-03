@@ -170,6 +170,11 @@ function generateReceiptPdf(order, opts = {}) {
   const contentMm = Number(opts.contentMm) > 0
     ? Number(opts.contentMm)
     : Math.max(40, paperMm - 10);
+  // Altura de página FIXA (mm) para casar exatamente com o papel do driver
+  // (ex.: POS-80 com "Printer Paper 80(72) x 210mm"). Quando definida, a página
+  // tem sempre esta altura — uma só página igual à do driver, sem paginação/feed
+  // infinito. Conteúdo maior do que isto faz a página crescer (nunca corta).
+  const pageHeightMm = Number(opts.pageHeightMm) > 0 ? Number(opts.pageHeightMm) : 0;
   // A página PDF usa a largura ÚTIL (content), não o rolo físico inteiro —
   // evita o diálogo de impressão forçar 80×297 mm quando o conteúdo é mais estreito.
   const pageWidthMm = Math.min(contentMm, paperMm);
@@ -209,7 +214,12 @@ function generateReceiptPdf(order, opts = {}) {
     }
   }
   measureDoc.end();
-  const pageHeight = Math.ceil(total + bottomPad);
+  const contentHeight = Math.ceil(total + bottomPad);
+  // Se houver altura fixa pedida, usa-a — exceto se o conteúdo for maior
+  // (nesse caso cresce para não cortar nada).
+  const pageHeight = pageHeightMm > 0
+    ? Math.max(contentHeight, Math.ceil(pageHeightMm * PT_PER_MM))
+    : contentHeight;
 
   // ---- PASS 2: render ----
   const doc = new PDFDocument({

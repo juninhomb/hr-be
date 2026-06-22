@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS products (
   image_placeholder_url VARCHAR(500),
   is_active BOOLEAN DEFAULT true,
   is_featured BOOLEAN NOT NULL DEFAULT false,
+  is_saldo BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
@@ -63,6 +64,9 @@ CREATE INDEX idx_products_is_active ON products(is_active);
 CREATE INDEX IF NOT EXISTS idx_products_is_featured
   ON products (is_featured)
   WHERE is_featured = true;
+CREATE INDEX IF NOT EXISTS idx_products_is_saldo
+  ON products (is_saldo)
+  WHERE is_saldo = true;
 
 -- =====================================================
 -- 4. PRODUCT_VARIANTS

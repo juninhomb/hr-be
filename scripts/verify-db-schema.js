@@ -14,7 +14,7 @@ const REQUIRED = {
   catalog_colors: ['id', 'name', 'sort_order', 'created_at'],
   products: [
     'id', 'category_id', 'name', 'description', 'characteristics', 'base_price',
-    'image_placeholder_url', 'is_active', 'is_featured', 'created_at',
+    'image_placeholder_url', 'is_active', 'is_featured', 'is_saldo', 'created_at',
   ],
   product_variants: [
     'id', 'product_id', 'sku', 'color', 'size', 'stock_quantity', 'is_active',

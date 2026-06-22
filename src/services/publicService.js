@@ -72,7 +72,7 @@ class PublicService {
   // Catálogo
   // -------------------------------------------------------------
 
-  async listProducts({ search = '', categoryId = null, featured = null } = {}) {
+  async listProducts({ search = '', categoryId = null, featured = null, saldo = null } = {}) {
     const exec = async (useVa) => {
       const frag = catalogFragments(useVa);
       const params = [];
@@ -93,6 +93,11 @@ class PublicService {
       } else if (featured === false) {
         where.push(`p.is_featured = false`);
       }
+      if (saldo === true) {
+        where.push(`p.is_saldo = true`);
+      } else if (saldo === false) {
+        where.push(`p.is_saldo = false`);
+      }
 
       const sql = `
       SELECT
@@ -103,6 +108,7 @@ class PublicService {
         p.base_price,
         p.image_placeholder_url,
         p.is_featured,
+        p.is_saldo,
         p.category_id,
         c.name            AS category_name,
         v.id              AS variant_id,
@@ -116,7 +122,7 @@ class PublicService {
       LEFT JOIN catalog_colors cc ON cc.id = v.color_id
       LEFT JOIN categories c ON c.id = p.category_id
       WHERE ${where.join(' AND ')}
-      ORDER BY p.is_featured DESC, p.name ASC, v.id ASC
+      ORDER BY p.is_saldo DESC, p.is_featured DESC, p.name ASC, v.id ASC
     `;
 
       const { rows } = await db.query(sql, params);
@@ -153,6 +159,7 @@ class PublicService {
         p.base_price,
         p.image_placeholder_url,
         p.is_featured,
+        p.is_saldo,
         p.category_id,
         c.name            AS category_name,
         v.id              AS variant_id,
@@ -824,6 +831,7 @@ function groupProductRows(rows) {
         base_price: Number(r.base_price),
         image_placeholder_url: r.image_placeholder_url,
         is_featured: Boolean(r.is_featured),
+        is_saldo: Boolean(r.is_saldo),
         category_id: r.category_id,
         category_name: r.category_name,
         variants: [],

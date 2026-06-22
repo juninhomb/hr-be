@@ -15,17 +15,23 @@ function sanitizeIdempotencyKey(raw) {
 class PublicController {
   async listProducts(req, res, next) {
     try {
-      const { search = '', category_id = '', featured } = req.query;
+      const { search = '', category_id = '', featured, saldo } = req.query;
       // featured: 'true' / '1' → só destaques; 'false' / '0' → só não-destaques;
       // ausente / outro valor → tudo (compat com o admin).
       let featuredFlag = null;
       if (featured === 'true' || featured === '1') featuredFlag = true;
       else if (featured === 'false' || featured === '0') featuredFlag = false;
 
+      // saldo: 'true' / '1' → só produtos marcados em saldo no admin.
+      let saldoFlag = null;
+      if (saldo === 'true' || saldo === '1') saldoFlag = true;
+      else if (saldo === 'false' || saldo === '0') saldoFlag = false;
+
       const data = await PublicService.listProducts({
         search: String(search).trim(),
         categoryId: category_id ? parseInt(category_id, 10) : null,
         featured: featuredFlag,
+        saldo: saldoFlag,
       });
       res.json(data);
     } catch (error) { next(error); }

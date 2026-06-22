@@ -334,6 +334,22 @@ class ProductController {
       res.json(updated);
     } catch (error) { next(error); }
   }
+
+  async setSaldo(req, res, next) {
+    try {
+      const productId = parseInt(req.params.productId, 10);
+      if (!Number.isFinite(productId)) {
+        return res.status(400).json({ error: 'productId inválido' });
+      }
+      const value = req.body?.is_saldo;
+      if (typeof value !== 'boolean') {
+        return res.status(400).json({ error: '`is_saldo` (boolean) é obrigatório.' });
+      }
+      const updated = await ProductService.setSaldo(productId, value);
+      if (!updated) return res.status(404).json({ error: 'Produto não encontrado' });
+      res.json(updated);
+    } catch (error) { next(error); }
+  }
 }
 
 module.exports = new ProductController();

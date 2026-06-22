@@ -25,6 +25,7 @@ class ProductService {
           c.name                  AS category_name,
           p.image_placeholder_url AS product_image,
           p.is_featured,
+          p.is_saldo,
           v.image_url             AS variant_image,
           v.sku,
           COALESCE(cc.name, v.color) AS color,
@@ -103,6 +104,20 @@ class ProductService {
     const { rows } = await db.query(
       `UPDATE products SET is_featured = $1 WHERE id = $2 RETURNING id, name, is_featured`,
       [Boolean(isFeatured), id]
+    );
+    return rows[0] || null;
+  }
+
+  /**
+   * Marca/desmarca um produto como SALDO. Recebe productId (id da
+   * tabela `products`, não SKU) porque o flag vive no produto-base.
+   */
+  async setSaldo(productId, isSaldo) {
+    const id = parseInt(productId, 10);
+    if (!Number.isFinite(id)) return null;
+    const { rows } = await db.query(
+      `UPDATE products SET is_saldo = $1 WHERE id = $2 RETURNING id, name, is_saldo`,
+      [Boolean(isSaldo), id]
     );
     return rows[0] || null;
   }

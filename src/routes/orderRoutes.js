@@ -53,6 +53,8 @@ router.post('/products/:sku/add', ProductController.addStock);
 
 // Marca/desmarca produto como DESTAQUE (mostrado primeiro na home pública)
 router.patch('/products/:productId/featured', ProductController.setFeatured);
+// Marca/desmarca produto como SALDO (secção dedicada no site — futuro)
+router.patch('/products/:productId/saldo', ProductController.setSaldo);
 
 // Categorias — CRUD admin (a admin gere lista + imagem na grelha da home)
 router.get('/categories', CategoryController.list);

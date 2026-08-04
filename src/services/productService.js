@@ -382,6 +382,13 @@ class ProductService {
       return true;
     } catch (error) {
       await client.query('ROLLBACK');
+      if (error.code === '23503') {
+        const e = new Error(
+          'Não é possível apagar: existem pedidos ligados a esta variante/produto.',
+        );
+        e.status = 409;
+        throw e;
+      }
       throw error;
     } finally {
       client.release();
